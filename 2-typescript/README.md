@@ -244,3 +244,163 @@ Create at least one ticket of each tier, log their prices, and log the seat desc
 Call parseQuantity with a number, a string, and JSON.parse("3"), and log the results
 Done when
 tsc tickets.ts exits without errors, and node tickets.js logs the prices, the seat descriptions, and three quantities.
+
+# Code Along 
+TypeScript Project Setup - Challenges
+
+Code Along: Music Library
+This code along continues the music library project from the basics session. You extend its configuration, split the code into modules, read a file with a Node.js API, and look at the declaration files the compiler can generate. Each part maps directly to the session material.
+
+Part 1: Extend the configuration
+Open your music-library folder. Its package.json is already there from the basics session. Set its type to module and install the Node.js type package:
+
+npm pkg set type=module
+npm install --save-dev @types/node
+
+Replace the content of tsconfig.json with the extended configuration from the extended tsconfig handout. Then compile:
+
+tsc
+
+The new coding rules report that TrackId and ArtistName are declared but never used. The Track interface replaced the old type alias that used them. Remove both aliases and compile again until tsc exits without errors.
+
+Part 2: ES modules
+Split the project into separate files. Create src/track.ts and move the interfaces and formatId into it:
+
+// src/track.ts
+export interface Media {
+  id: number;
+  title: string;
+}
+
+export interface Track extends Media {
+  artist: string;
+  liked: boolean;
+}
+
+export interface FeaturedTrack extends Track {
+  curatedBy: string;
+  readonly addedDate: string;
+}
+
+export function formatId(id: number): string {
+  return `TRK-${id}`;
+}
+
+Create src/main.ts as the new entry point. Import the runtime function with a regular import and the interfaces with type-only imports:
+
+// src/main.ts
+import { formatId } from "./track.js";
+import type { Track, FeaturedTrack } from "./track.js";
+
+const libraryName = "Late Night Listening";
+
+function describeTrack(title: string, artist: string): string {
+  return `${title} by ${artist}`;
+}
+
+const tracks: Track[] = [
+  { id: 1, title: "Blue Light", artist: "Jorja Smith", liked: true },
+  { id: 2, title: "Nights", artist: "Frank Ocean", liked: false },
+];
+
+const pick: FeaturedTrack = {
+  id: 3,
+  title: "Golden",
+  artist: "Jill Scott",
+  liked: true,
+  curatedBy: "editorial",
+  addedDate: "2024-01-15",
+};
+
+console.log(`Library: ${libraryName}`);
+console.log(describeTrack(tracks[0].title, tracks[0].artist));
+tracks.forEach((t) => console.log(formatId(t.id)));
+console.log(`Featured: ${pick.title}, added ${pick.addedDate}`);
+
+Delete src/index.ts. Compile and run the new entry point:
+
+tsc
+node dist/main.js
+
+Remove the .js extension from one of the import paths and compile again. tsc reports error TS2835, because Node.js would not find the file at runtime. Add the extension back before continuing.
+
+Then move Track from the import type line into the regular import and compile again. verbatimModuleSyntax makes tsc report error TS1484. Undo the change before continuing.
+
+Part 3: Type packages
+Create a file called notes.txt in the project root with a line of text, for example Remember to update the playlist on Fridays. Then read it at the end of src/main.ts with the fs module from Node.js:
+
+import { readFileSync } from "node:fs";
+
+const notes = readFileSync("notes.txt", "utf8");
+console.log(notes);
+
+Move the import line to the top of the file, next to the other imports. Compile and run the project from the project root. Hover over readFileSync in your editor to see the type information that @types/node provides.
+
+Now change "types": ["node"] to "types": [] in tsconfig.json and compile again. Read the errors about node:fs and console, then restore the setting.
+
+Part 4: A types file and declaration files
+Move the three interfaces from src/track.ts into a new file src/types.ts, so that src/track.ts only contains formatId. Export the interfaces from src/types.ts and update the type import in src/main.ts:
+
+import type { Track, FeaturedTrack } from "./types.js";
+
+Compile and run the project again.
+
+Next, add "declaration": true to the compilerOptions in tsconfig.json and compile. Open dist/track.d.ts and dist/types.d.ts and compare them with their .ts sources: the function body of formatId is gone, and only the types and signatures are left. Remove the declaration option again before continuing.
+
+Film Watchlist
+Model a film watchlist in TypeScript. The requirements are:
+
+Challenge
+0/10
+Film Watchlist
+
+Set up a new project with "type": "module" in its package.json and TypeScript installed locally
+
+Set up a tsconfig.json with strict mode enabled
+
+A Watchable base interface with a readonly id, a title, and a year
+
+A Film interface extending Watchable with watched: boolean and an optional rating between 1 and 5
+
+A Playlist interface with a name and an array of films
+
+A function formatFilm(film: Film): string that returns a one-line description. Include the rating only if one is set
+
+A function getUnwatched(playlist: Playlist): Film[] that returns only films where watched is false
+
+Organize the code across two files: one that defines and exports the interfaces and functions, one that imports them and runs the program
+
+The entry point should define a playlist with at least three films and log the output of both functions
+
+Use import type where appropriate
+Done when
+npx tsc reports no errors, and the entry point logs all films and then only the unwatched ones.
+
+Online Shop
+A small online shop sells products organized into categories. Customers place orders. Each order contains one or more line items.
+
+Design the TypeScript type system for this shop from scratch, and implement at least the three functions in the list. Requirements:
+
+Challenge
+0/9
+Online Shop
+
+A product has a name, a price in euros, and a stock count. Its id must never be reassigned after creation.
+
+Products belong to a category. A category has a name and an optional description.
+
+A customer has an id, name, and email.
+
+An order links a customer to a list of line items. Each line item references a product and a quantity. Orders carry a status of either "pending", "confirmed", or "shipped".
+
+A function orderTotal(order: Order): number that returns the total price across all line items
+
+A function formatOrder(order: Order): string that returns a readable summary of the order
+
+A function isInStock(product: Product): boolean that returns whether the product has stock available
+
+Split the code across at least three files.
+
+Use strict mode.
+Done when
+The project compiles without errors and logs meaningful output when the entry point runs.
