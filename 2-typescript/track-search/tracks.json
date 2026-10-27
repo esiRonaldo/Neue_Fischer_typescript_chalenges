@@ -1,0 +1,49 @@
+[
+    {
+        "id": 1,
+        "title": "Blue Light",
+        "artist": "Jorja Smith",
+        "liked": true
+    },
+    {
+        "id": 2,
+        "title": "Nights",
+        "artist": "Frank Ocean",
+        "liked": false
+    },
+    {
+        "id": 3,
+        "title": "Golden",
+        "artist": "Jill Scott",
+        "liked": true
+    },
+    {
+        "id": 4,
+        "title": "Ivy",
+        "artist": "Frank Ocean",
+        "liked": true
+    },
+    {
+        "id": 5,
+        "title": "Be Honest",
+        "artist": "Jorja Smith",
+        "liked": false
+    },
+    {
+        "id": "6",
+        "title": "Pink + White",
+        "artist": "Frank Ocean",
+        "liked": false
+    },
+    {
+        "id": 7,
+        "title": "A Long Walk",
+        "artist": "Jill Scott",
+        "liked": false
+    },
+    {
+        "id": 8,
+        "title": "Teenage Fantasy",
+        "liked": true
+    }
+]

@@ -287,3 +287,409 @@ on("searchPerformed", handler) passes { query: string; resultCount: number } to 
 Done when
 emit("bookAdded", book) runs the handlers registered with on("bookAdded", ...), and emit("bookAdded", { id: 1 }) is a compile error.
 
+# advanced 2
+# TypeScript Client-Side - Challenges
+Translate this file ↗
+Code Along: Track Search
+This code along builds a search page for your music library that runs in the browser. It loads the tracks from a JSON file, renders the results, and lets you like a track. Each part maps directly to the session material.
+
+Part 1: Set up a browser project
+Create a new folder for the project and install TypeScript in it:
+
+mkdir track-search
+cd track-search
+npm init -y
+npm install --save-dev typescript
+
+Create this structure:
+
+track-search/
+  node_modules/
+  src/
+    main.ts
+  index.html
+  package.json
+  tracks.json
+  tsconfig.json
+
+Add this HTML to index.html:
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Track Search</title>
+    <script type="module" src="dist/main.js"></script>
+  </head>
+  <body>
+    <form id="search-form">
+      <input name="query" type="search" placeholder="Title or artist" />
+      <button>Search</button>
+    </form>
+    <ul id="track-list"></ul>
+  </body>
+</html>
+
+tracks.json plays the role of the API. Copy this data into it:
+
+[
+  { "id": 1, "title": "Blue Light", "artist": "Jorja Smith", "liked": true },
+  { "id": 2, "title": "Nights", "artist": "Frank Ocean", "liked": false },
+  { "id": 3, "title": "Golden", "artist": "Jill Scott", "liked": true },
+  { "id": 4, "title": "Ivy", "artist": "Frank Ocean", "liked": true },
+  { "id": 5, "title": "Be Honest", "artist": "Jorja Smith", "liked": false },
+  {
+    "id": "6",
+    "title": "Pink + White",
+    "artist": "Frank Ocean",
+    "liked": false
+  },
+  { "id": 7, "title": "A Long Walk", "artist": "Jill Scott", "liked": false },
+  { "id": 8, "title": "Teenage Fantasy", "liked": true }
+]
+
+Add the tsconfig.json for browser environments:
+
+{
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["dom", "esnext"],
+    "strict": true
+  }
+}
+
+Write console.log("ready") in src/main.ts. Then start the compiler in watch mode, and a local web server in a second terminal:
+
+tsc --watch
+
+npx http-server -c-1
+
+Open the address that http-server prints, usually http://localhost:8080, and check the browser console for ready. The option -c-1 turns off caching, so a reload always loads your latest build. The Live Preview extension in VS Code or another static file server works too.
+
+Part 2: Select the elements
+Replace the console.log in src/main.ts. Select the form and the list, and instead of asserting their types, narrow them with instanceof. If an element is missing, stop with an error:
+
+const form = document.getElementById("search-form");
+const list = document.getElementById("track-list");
+
+if (!(form instanceof HTMLFormElement)) {
+  throw new Error("Element #search-form not found");
+}
+if (!(list instanceof HTMLUListElement)) {
+  throw new Error("Element #track-list not found");
+}
+
+Hover over form and list below the checks: TypeScript now knows them as HTMLFormElement and HTMLUListElement. Rename one of the ids in index.html, reload the page, and read the error in the browser console. Then change the id back.
+
+Part 3: Read the search query
+Add a function that reads the query from the form, and a submit listener that logs it. Hover over event to see the type TypeScript inferred:
+
+function readQuery(form: HTMLFormElement): string {
+  const query = new FormData(form).get("query");
+  return typeof query === "string" ? query.trim().toLowerCase() : "";
+}
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  console.log(readQuery(form));
+});
+
+Type a search term, submit the form, and check the console. FormData.get() returns FormDataEntryValue | null, so readQuery() narrows it with typeof before it calls trim().
+
+Part 4: Fetch and render the tracks
+Create src/tracks.ts with the Track interface and a function that loads the tracks:
+
+// src/tracks.ts
+export interface Track {
+  id: number;
+  title: string;
+  artist: string;
+  liked: boolean;
+}
+
+export async function fetchTracks(url: string): Promise<Track[]> {
+  const response = await fetch(url);
+  const data = await response.json();
+  return data as Track[];
+}
+
+Import it at the top of src/main.ts. The local import needs the .js extension, because the browser loads exactly this path:
+
+import { fetchTracks } from "./tracks.js";
+import type { Track } from "./tracks.js";
+
+Below the element checks, add a function that renders a list of tracks, then load the tracks once and render them:
+
+const render = (results: Track[]): void => {
+  list.replaceChildren(
+    ...results.map((track) => {
+      const item = document.createElement("li");
+      item.textContent = `${track.title} by ${track.artist}`;
+      return item;
+    }),
+  );
+};
+
+const tracks = await fetchTracks("tracks.json");
+render(tracks);
+
+render is an arrow function stored in a const. A function declaration is hoisted and could run before the checks, so TypeScript would forget inside it that list is an HTMLUListElement.
+textContent inserts the title as text. With innerHTML, a title that contains HTML would be interpreted as HTML.
+Then change the submit listener so that it renders only the matching tracks:
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const query = readQuery(form);
+  render(
+    tracks.filter((track) =>
+      `${track.title} ${track.artist}`.toLowerCase().includes(query),
+    ),
+  );
+});
+
+Reload the page and try a few searches, for example frank or jorja. In the full list, one track shows by undefined, and in tracks.json you find a second broken entry whose id is a string. The compiler did not warn you about either, because as Track[] checks nothing.
+
+Part 5: Check the data
+Replace the assertion with real checks. Add a type guard to src/tracks.ts:
+
+// src/tracks.ts
+function isTrack(value: unknown): value is Track {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    typeof value.id === "number" &&
+    "title" in value &&
+    typeof value.title === "string" &&
+    "artist" in value &&
+    typeof value.artist === "string" &&
+    "liked" in value &&
+    typeof value.liked === "boolean"
+  );
+}
+
+Then change fetchTracks(), so that it checks the response and keeps only valid tracks:
+
+// src/tracks.ts
+export async function fetchTracks(url: string): Promise<Track[]> {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+
+  const data: unknown = await response.json();
+
+  if (!Array.isArray(data)) {
+    throw new Error("Expected a list of tracks");
+  }
+
+  return data.filter(isTrack);
+}
+
+Reload the page. The two broken entries are gone, and the list shows six tracks.
+
+Now show an error on the page when loading fails. In src/main.ts, replace the two lines that load and render the tracks:
+
+let tracks: Track[] = [];
+
+try {
+  tracks = await fetchTracks("tracks.json");
+  render(tracks);
+} catch (error) {
+  const message = error instanceof Error ? error.message : "Unknown error";
+  list.textContent = `Could not load tracks: ${message}`;
+}
+
+Change the URL to track.json and reload. The page shows Could not load tracks: Request failed with status 404. Change the URL back.
+
+Part 6: Like tracks
+Give every track a like button. Change render, so that each item starts with a button that stores the track id in a data-id attribute:
+
+const render = (results: Track[]): void => {
+  list.replaceChildren(
+    ...results.map((track) => {
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      button.dataset.id = String(track.id);
+      button.textContent = track.liked ? "♥" : "♡";
+      item.append(button, ` ${track.title} by ${track.artist}`);
+      return item;
+    }),
+  );
+};
+
+One listener on the list handles all buttons, including the ones from later searches:
+
+list.addEventListener("click", (event) => {
+  const button = event.target;
+  if (!(button instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const id = Number(button.dataset.id);
+  const track = tracks.find((item) => item.id === id);
+  if (track) {
+    track.liked = !track.liked;
+    button.textContent = track.liked ? "♥" : "♡";
+  }
+});
+
+event.target is EventTarget | null. The instanceof check makes sure that the click hit a like button and not the text of a list item.
+button.dataset.id has the type string | undefined, because any data attribute might be missing. For a missing attribute, Number() returns NaN, and find() finds nothing.
+Click a few hearts and search again: the likes stay, until you reload the page.
+
+Book Search
+Build the same kind of search page for books, with a real API. The DBooks API lists free programming books. Its search endpoint https://www.dbooks.org/api/search/{query} returns JSON like this:
+
+{
+  "status": "ok",
+  "total": "87",
+  "books": [
+    {
+      "id": "3030168778",
+      "title": "Programming for Computations - Python",
+      "subtitle": "A Gentle Introduction to Numerical Simulations with Python 3.6",
+      "authors": "Svein Linge, Hans Petter Langtangen",
+      "image": "https://www.dbooks.org/img/books/3030168778s.jpg",
+      "url": "https://www.dbooks.org/programming-for-computations-python-3030168778/"
+    }
+  ]
+}
+
+Challenge
+0/7
+Book Search
+
+Set up a new browser project with index.html, src/main.ts, tsconfig.json, and TypeScript installed locally
+
+Select a search form and a result list, and narrow both with instanceof
+
+Define a Book interface for one entry and a SearchResult interface for the whole response. Look closely at the types of id and total.
+
+Write the type guards isBook and isSearchResult
+
+Write fetchBooks(query: string): Promise<Book[]>. It checks response.ok, checks the data with your type guards, and returns the books
+
+Render each book as an <li> with its title and authors
+
+Show an error message in the list when the request fails
+Done when
+A search for python lists books with their titles and authors, and with the network set to “Offline” in the developer tools, the page shows your error message.
+
+Hint
+Character Counter
+A message box allows at most 140 characters. Start with this HTML:
+
+<textarea id="message"></textarea>
+<p id="char-count">0 / 140</p>
+<button id="send-button">Send</button>
+
+Challenge
+0/4
+Character Counter
+
+Select the three elements and narrow them with instanceof
+
+Write the handler as a separate function handleInput(event: InputEvent): void and register it for the input event
+
+In the handler, read the text from event.target and narrow it to HTMLTextAreaElement
+
+Update the count on every input, and disable the button while the message is longer than 140 characters
+Done when
+The count changes while you type, and at 141 characters the button is disabled.
+
+Hint
+Color Picker
+A dropdown changes the background color of a box:
+
+<select id="color-select">
+  <option value="white">White</option>
+  <option value="lightblue">Light Blue</option>
+  <option value="lightgreen">Light Green</option>
+</select>
+<div
+  id="color-box"
+  style="width: 100px; height: 100px; border: 1px solid black"
+></div>
+
+Challenge
+0/5
+Color Picker
+
+Define a union of literal types BoxColor with the three values of the <option> elements
+
+Write a function paintBox(color: BoxColor): void that sets the background color of the box
+
+Write a type guard isBoxColor(value: string): value is BoxColor
+
+On change, read select.value and call paintBox() only if the value passes isBoxColor()
+
+Add a fourth <option> with the value "orange" to the HTML, without changing your TypeScript code
+Done when
+The three colors paint the box, and choosing the new fourth option leaves the box as it is.
+
+Counter
+Two buttons change a number. The step of each button is stored in a data-step attribute:
+
+<button data-step="-1">-</button>
+<span id="counter">0</span>
+<button data-step="1">+</button>
+
+Challenge
+0/4
+Counter
+
+Keep the count in a number variable and write it to the <span> after every change. Don’t read it back from textContent, which has the type string | null.
+
+Select both buttons with querySelectorAll() and register the same handler function handleClick(event: MouseEvent): void on each
+
+In the handler, narrow event.target to HTMLButtonElement and read the step from dataset.step
+
+The count never goes below 0
+Done when
++ and - change the number by one, and at 0 the - button does nothing.
+
+To-do List
+Build a to-do list where you can add tasks, check them off, and delete them:
+
+<input id="todo-input" placeholder="New task" />
+<button id="add-todo">Add</button>
+<ul id="todo-list"></ul>
+
+Challenge
+0/5
+To-do List
+
+Define an interface Todo with id, text, and done, and keep all to-dos in an array
+
+Write a function render(todos: Todo[]): void that rebuilds the list from the array. Each item has a checkbox, the text, and a delete button.
+
+Add a to-do when the button is clicked, but not when the input is empty
+
+Register a single click listener on the list for all checkboxes and delete buttons. Narrow event.target to find out what was clicked.
+
+Show done items with a strikethrough
+Done when
+You can add, check off, and delete to-dos, and the list never contains an empty item.
+
+Hint
+Bonus: Keep the to-dos
+Right now, a reload deletes all to-dos. Store them in localStorage, and check them when you load them, because anybody can change localStorage in the developer tools.
+
+Challenge
+0/4
+Keep the to-dos
+
+Save the to-do array to localStorage as JSON after every change
+
+On page load, read it back with JSON.parse() and annotate the result as unknown
+
+Write a type guard isTodo and keep only the entries that pass it
+
+In the developer tools, change done of a saved to-do to a string, and reload the page
+Done when
+Your to-dos survive a reload, and the changed entry disappears instead of breaking the page.
