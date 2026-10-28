@@ -38,6 +38,6 @@ form.addEventListener("submit", async (event) => {
     }
     catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error";
-        list.textContent = `Could not load books: &{message}`
+        list.textContent = `Could not load books: ${message}`
     }
 });
