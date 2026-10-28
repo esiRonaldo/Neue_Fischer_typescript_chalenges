@@ -12,9 +12,10 @@ const handleClick = (event: MouseEvent): void => {
     const button = event.target
     // if (!(button instanceof HTMLButtonElement)) throw new Error(`Element #button not found`)
     if (!(button instanceof HTMLButtonElement)) return
+
     const step = Number(button.dataset.step)
-    
-    if (step + count >= 0) count += step
+    if (count + step < 0) return
+    count += step
 
     render()
 }
