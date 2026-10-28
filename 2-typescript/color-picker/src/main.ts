@@ -11,7 +11,7 @@ if (!(box instanceof HTMLDivElement))
 const paintBox = (color: BoxColor): void => {
     box.style.backgroundColor = color
 }
-//TODO: value not Unknown?
+
 const isBoxColor = (value: string): value is BoxColor => {
     return (
         value === "white" ||
