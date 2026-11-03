@@ -3,12 +3,13 @@ import nunjucks from "nunjucks";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from 'node:path'
 import { randomUUID } from "node:crypto";
-
+import { logger } from "./logger";
 
 const app = express()
 const port = 3000
 const messageDir = path.join(import.meta.dirname, '..', 'messages')
 
+app.use(logger)
 app.use(express.urlencoded({ extended: false }))
 
 nunjucks.configure("views", {
