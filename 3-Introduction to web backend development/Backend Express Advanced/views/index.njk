@@ -1,0 +1,10 @@
+{% extends "base.njk" %}
+
+{% block content %}
+<h1>Burn on read</h1>
+<form method="post" action="/messages">
+    <label for="message">Message</label>
+    <textarea id="message" name="message" rows="5" required></textarea>
+    <button type="submit">Create link</button>
+</form>
+{% endblock %}

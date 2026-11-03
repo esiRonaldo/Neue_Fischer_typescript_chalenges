@@ -1,0 +1,10 @@
+{%extends "base.njk" %}
+
+{% block content %}
+
+<h1>Link created</h1>
+<p>Send this link. It can be opened only once:</p>
+<p><a href="{{ link }}">{{ link }}</a></p>
+<a href="/">Create another message</a>
+
+{%endblock %}
