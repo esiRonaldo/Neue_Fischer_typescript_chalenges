@@ -1,0 +1,11 @@
+{% macro field(label, placeholder, type="text") %}
+{% set id = label | lower | replace(" ", "-") %}
+<div class="form-floating">
+    {% if type == "textarea" %}
+    <textarea class="form-control" id="{{ id }}" name="{{ id }}" placeholder="{{ placeholder }}" style="height: 12rem"></textarea>
+    {% else %}
+    <input class="form-control" id="{{ id }}" name="{{ id }}" type="{{ type }}" placeholder="{{ placeholder }}" />
+    {% endif %}
+    <label for="{{ id }}">{{ label }}</label>
+</div>
+{% endmacro %}

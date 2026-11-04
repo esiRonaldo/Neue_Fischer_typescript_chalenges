@@ -14,8 +14,48 @@ nunjucks.configure("views", {
   watch: true,
 });
 
+function slugify(title: string) {
+  return title
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function formatDate(unixSeconds: number) {
+  return new Date(unixSeconds * 1000).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+const blogPosts = posts.map((post) => ({
+  ...post,
+  slug: slugify(post.title),
+  date: formatDate(post.createdAt),
+}));
+
 app.get("/", (_req, res) => {
-  res.render("index.njk", { posts });
+  res.render("index.njk", { posts: blogPosts });
+});
+
+app.get("/posts/:slug", (req, res) => {
+  const post = blogPosts.find((p) => p.slug === req.params.slug);
+
+  if (!post) {
+    return res.status(404).send("Post not found");
+  }
+
+  res.render("post.njk", { post });
+});
+
+app.get("/about", (_req, res) => {
+  res.render("about.njk");
+});
+
+app.get("/contact", (_req, res) => {
+  res.render("contact.njk");
 });
 
 app.listen(port, () => {
