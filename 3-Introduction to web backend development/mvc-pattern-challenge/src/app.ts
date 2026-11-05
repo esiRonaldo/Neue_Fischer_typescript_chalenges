@@ -1,16 +1,9 @@
-import express, { type Request, type Response } from "express";
+import express from "express";
 import nunjucks from "nunjucks";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import postRoutes from "./routes/postRoutes";
 
-interface Post {
-  title: string;
-  image: string;
-  author: string;
-  createdAt: number;
-  teaser: string;
-  content: string;
-}
 
 const app = express();
 
@@ -23,7 +16,7 @@ const cssDir = path.join(projectRoot, "src", "css");
 nunjucks.configure(projectRoot, { autoescape: true, express: app });
 app.use("/assets", express.static(assetsDir));
 app.use("/css", express.static(cssDir));
-
+app.use("/", postRoutes);
 
 const port = Number(process.env.PORT) || 3000;
 
