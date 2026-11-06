@@ -1,0 +1,26 @@
+{% import "formField.html" as forms %}
+{% extends "_baseLayout.html" %}
+
+{% block main_content %}
+  <div class="container px-4 px-lg-5">
+    <div class="row gx-4 gx-lg-5 justify-content-center">
+      <div class="col-md-10 col-lg-8 col-xl-7">
+        <h2 class="mb-4">{{ "Edit post" if post.title else "New post" }}</h2>
+
+        <form method="post" action="{{ action }}">
+          {{ forms.formField('title', 'Title', 'text', post.title) }}
+          {{ forms.formField('author', 'Author', 'text', post.author) }}
+          {{ forms.formField('image', 'Image file name', 'text', post.image) }}
+          {{ forms.formField('teaser', 'Teaser', 'text', post.teaser) }}
+          {{ forms.formField('content', 'Content (HTML)', 'textarea', post.content) }}
+
+          <br />
+          <button class="btn btn-primary text-uppercase" type="submit">
+            Save
+          </button>
+          <a class="btn btn-link" href="/admin">Cancel</a>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock main_content %}

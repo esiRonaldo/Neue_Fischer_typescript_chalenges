@@ -60,3 +60,31 @@ export function getPostBySlug(slug: string): Post | undefined {
 export function writePosts(newPosts: Post[]): void {
     posts = newPosts;
 }
+
+export function addPost(post: Post): void {
+    writePosts([...getAllPosts(), post]);
+}
+
+export function updatePost(slug: string, changes: Partial<Post>): boolean {
+    const posts = getAllPosts();
+    const index = posts.findIndex((post) => slugify(post.title) === slug);
+    if (index === -1) {
+        return false;
+    }
+
+    const updated = [...posts];
+    updated[index] = { ...posts[index]!, ...changes };
+    writePosts(updated);
+    return true;
+}
+
+export function deletePost(slug: string): boolean {
+    const posts = getAllPosts();
+    const remaining = posts.filter((post) => slugify(post.title) !== slug);
+    if (remaining.length === posts.length) {
+        return false;
+    }
+
+    writePosts(remaining);
+    return true;
+}

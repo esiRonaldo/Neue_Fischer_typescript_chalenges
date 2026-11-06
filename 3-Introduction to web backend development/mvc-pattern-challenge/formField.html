@@ -1,13 +1,25 @@
-{% macro formField(id, label, type='text') %}
+{% macro formField(id, label, type='text', value='') %}
   <div class="form-floating">
-    <input
-      class="form-control"
-      id="{{ id }}"
-      name="{{ id }}"
-      type="{{ type }}"
-      placeholder="{{ label }}"
-      data-sb-validations="required"
-    />
+    {% if type == 'textarea' %}
+      <textarea
+        class="form-control"
+        id="{{ id }}"
+        name="{{ id }}"
+        placeholder="{{ label }}"
+        style="height: 12rem"
+        data-sb-validations="required"
+      >{{ value }}</textarea>
+    {% else %}
+      <input
+        class="form-control"
+        id="{{ id }}"
+        name="{{ id }}"
+        type="{{ type }}"
+        placeholder="{{ label }}"
+        value="{{ value }}"
+        data-sb-validations="required"
+      />
+    {% endif %}
     <label for="{{ id }}">{{ label }}</label>
     <div class="invalid-feedback" data-sb-feedback="{{ id }}:required">
       A {{ label }} is required.
