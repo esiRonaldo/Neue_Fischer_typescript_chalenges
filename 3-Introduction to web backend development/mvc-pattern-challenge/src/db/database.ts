@@ -3,7 +3,7 @@ import { open, Database } from "sqlite"
 import sqlite3 from "sqlite3"
 
 
-const DB_FILE = path.join(process.cwd(), 'src', 'db', 'blog.db')
+const DB_FILE = path.join(process.cwd(), process.env.DB_FILE ?? 'src/db/blog.db')
 let db: Database | null = null
 
 export async function connectDB(): Promise<Database> {

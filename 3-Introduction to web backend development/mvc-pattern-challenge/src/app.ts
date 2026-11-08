@@ -16,6 +16,7 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, "..");
 const assetsDir = path.join(projectRoot, "src", "assets");
 const cssDir = path.join(projectRoot, "src", "css");
+const jsDir = path.join(projectRoot, "src", "js");
 
 await connectDB();
 await seedDB();
@@ -28,6 +29,7 @@ async function shutdown() {
 nunjucks.configure(projectRoot, { autoescape: true, express: app });
 app.use("/assets", express.static(assetsDir));
 app.use("/css", express.static(cssDir));
+app.use("/js", express.static(jsDir));
 app.use(express.urlencoded({ extended: true }));
 app.use("/", postRoutes);
 app.use("/admin", adminRoutes);

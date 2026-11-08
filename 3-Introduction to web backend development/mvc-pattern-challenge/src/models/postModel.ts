@@ -1,3 +1,5 @@
+import { getDB } from "../db/database";
+
 export interface Post {
     title: string;
     image: string;
@@ -49,12 +51,19 @@ export function slugify(title: string): string {
         .replace(/^-|-$/g, "");
 }
 
-export function getAllPosts(): Post[] {
-    return posts;
+export async function getAllPosts(): Promise<Post[]> {
+    const db = getDB();
+    return db.all<Post[]>(
+        "SELECT title, image, author, createdAt, teaser, content FROM posts",
+    );
 }
 
-export function getPostBySlug(slug: string): Post | undefined {
-    return posts.find((post) => slugify(post.title) === slug);
+export async function getPostBySlug(slug: string): Promise<Post | undefined> {
+    const db = getDB();
+    return db.get<Post>(
+        "SELECT title, image, author, createdAt, teaser, content FROM posts WHERE slug = ?",
+        slug,
+    );
 }
 
 export function writePosts(newPosts: Post[]): void {
@@ -62,11 +71,10 @@ export function writePosts(newPosts: Post[]): void {
 }
 
 export function addPost(post: Post): void {
-    writePosts([...getAllPosts(), post]);
+    writePosts([...posts, post]);
 }
 
 export function updatePost(slug: string, changes: Partial<Post>): boolean {
-    const posts = getAllPosts();
     const index = posts.findIndex((post) => slugify(post.title) === slug);
     if (index === -1) {
         return false;
@@ -79,7 +87,6 @@ export function updatePost(slug: string, changes: Partial<Post>): boolean {
 }
 
 export function deletePost(slug: string): boolean {
-    const posts = getAllPosts();
     const remaining = posts.filter((post) => slugify(post.title) !== slug);
     if (remaining.length === posts.length) {
         return false;

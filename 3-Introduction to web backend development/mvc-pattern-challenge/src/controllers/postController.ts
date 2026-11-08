@@ -11,8 +11,8 @@ function formatDate(unix: number): string {
     });
 }
 
-export const showPosts = (req: Request, res: Response) => {
-    const posts = postModel.getAllPosts();
+export async function showPosts(req: Request, res: Response) {
+    const posts = await postModel.getAllPosts();
 
     const authorFilter =
         typeof req.query.author === "string" ? req.query.author.trim() : "";
@@ -58,9 +58,9 @@ export const showPosts = (req: Request, res: Response) => {
             hasNext: currentPage < totalPages,
         },
     });
-};
+}
 
-export const showPost = (req: Request, res: Response) => {
+export async function showPost(req: Request, res: Response) {
     const slug = Array.isArray(req.params.slug)
         ? req.params.slug[0]
         : req.params.slug;
@@ -70,7 +70,7 @@ export const showPost = (req: Request, res: Response) => {
         return;
     }
 
-    const post = postModel.getPostBySlug(slug);
+    const post = await postModel.getPostBySlug(slug);
     if (!post) {
         res.status(404).send("Post not found");
         return;
@@ -78,16 +78,16 @@ export const showPost = (req: Request, res: Response) => {
     res.render("post.html", {
         post: { ...post, createdAt: formatDate(post.createdAt) },
     });
-};
+}
 
-export const showAbout = (_req: Request, res: Response) => {
+export function showAbout(_req: Request, res: Response) {
     res.render("about.html");
 }
 
-export const showContact = (_req: Request, res: Response) => {
+export function showContact(_req: Request, res: Response) {
     res.render("contact.html");
-};
+}
 
-export const showExamplePost = (_req: Request, res: Response) => {
+export function showExamplePost(_req: Request, res: Response) {
     res.render("postExample.html");
-};
+}

@@ -2,5 +2,5 @@
   "watch": ["src", "."],
   "ext": "ts,html,css",
   "ignore": ["node_modules", ".git"],
-  "exec": "tsx src/app.ts"
+  "exec": "tsx --env-file-if-exists=.env src/app.ts"
 }
