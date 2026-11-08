@@ -450,3 +450,32 @@ Add a GET /login page with a form, a POST /login handler that checks a hardcoded
 Use the cookie-parser package to read cookies from req.cookies.
 
 🚨Neither approach is production-ready. Hardcoded passwords, plain cookies without signing, and missing CSRF protection are all real problems. The point of this challenge is to feel where the auth seam goes in an MVC app, not to ship a secure system.
+
+# Integrate SQLite into Your Express Project
+Connect your existing Blog project to a SQLite database and replace the posts in your code with real database reads.
+
+Requirements:
+
+Create src/db/database.ts with connectDB(), getDB(), and closeDB() functions
+Call connectDB() in your entry file before starting the server. In the MVC challenge starter, that is src/app.ts.
+Register SIGINT and SIGTERM handlers that call closeDB() before exiting
+Define the table schema in connectDB() using CREATE TABLE IF NOT EXISTS
+Create a db folder in the project. SQLite creates the database file blog.db in it on the first start, but not the folder itself.
+Let the server start successfully and generate the empty table. Then fill the table with the posts your project already has, either with a seed file as shown in the SQLite setup handout or in DB Browser.
+Refactor your model so that the get-all function uses the database instead of the data in your code
+Refactor your model so that the get-one function uses the database instead of the data in your code
+Verify the data is being read correctly by inspecting the database file with DB Browser
+Hint
+Design the table for the posts you already have, not for the example in the handout. The posts in the starter have no id, store createdAt as a Unix timestamp, and are found by a slug that slugify builds from the title.
+
+A createdAt column of type INTEGER keeps formatDate working.
+A column slug TEXT NOT NULL UNIQUE lets the get-one function find a post with WHERE slug = ?. You can copy the slugs from the URLs of the detail pages.
+Inside a SQL string, an apostrophe is written twice: 'Flowers: Nature''s Muse for Design'.
+Hint
+getAllPosts and getPostBySlug now return a Promise. Mark every controller that calls them as async and await the result. Run npm run typecheck to find every place that still uses the result without await. TypeScript reports them like this: Property 'filter' does not exist on type 'Promise<Post[]>'.
+
+The admin functions addPost, updatePost, and deletePost from the MVC challenge also build on getAllPosts. Until the next session moves them to SQL, let them work on the array directly. Posts you create in the admin panel do not show up on the site in the meantime.
+
+SQL Practice Games
+Work through one or more of these interactive SQL games. Each one teaches SQL through a story or puzzle — you write real queries to progress.
+
