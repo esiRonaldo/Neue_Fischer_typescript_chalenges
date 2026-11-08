@@ -7,7 +7,7 @@ export interface Post {
     content: string;
 }
 
-const seedPosts: Post[] = [
+export const seedPosts: Post[] = [
     {
         title: "Black: The Absence, Not the Presence, of Color",
         image: "colorful-umbrella.jpg",

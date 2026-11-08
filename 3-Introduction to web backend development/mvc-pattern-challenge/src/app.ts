@@ -5,8 +5,9 @@ import { fileURLToPath } from "node:url";
 import postRoutes from "./routes/postRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import { connectDB, closeDB } from "./db/database";
+import { seedDB } from "./db/seed";
 
-
+process.env.NODE_ENV ??= "development";
 
 const app = express();
 
@@ -17,6 +18,7 @@ const assetsDir = path.join(projectRoot, "src", "assets");
 const cssDir = path.join(projectRoot, "src", "css");
 
 await connectDB();
+await seedDB();
 async function shutdown() {
   await closeDB();
   console.log("Database closed");
