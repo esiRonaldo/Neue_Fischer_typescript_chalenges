@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import postRoutes from "./routes/postRoutes";
 import adminRoutes from "./routes/adminRoutes";
+import apiRoutes from "./routes/apiRoutes";
 import { connectDB, closeDB } from "./db/database";
 import { seedDB } from "./db/seed";
 import { basicAuth } from "./middleware/basicAuth";
@@ -33,8 +34,10 @@ app.use("/assets", express.static(assetsDir));
 app.use("/css", express.static(cssDir));
 app.use("/js", express.static(jsDir));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use("/", postRoutes);
 app.use("/admin", basicAuth, adminRoutes);
+app.use("/api", basicAuth, apiRoutes);
 
 
 const port = Number(process.env.PORT) || 3000;
