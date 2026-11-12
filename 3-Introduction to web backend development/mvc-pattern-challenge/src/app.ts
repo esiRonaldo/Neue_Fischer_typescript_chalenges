@@ -6,6 +6,7 @@ import postRoutes from "./routes/postRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import { connectDB, closeDB } from "./db/database";
 import { seedDB } from "./db/seed";
+import { basicAuth } from "./middleware/basicAuth";
 
 process.env.NODE_ENV ??= "development";
 
@@ -32,7 +33,7 @@ app.use("/css", express.static(cssDir));
 app.use("/js", express.static(jsDir));
 app.use(express.urlencoded({ extended: true }));
 app.use("/", postRoutes);
-app.use("/admin", adminRoutes);
+app.use("/admin", basicAuth, adminRoutes);
 
 
 const port = Number(process.env.PORT) || 3000;
