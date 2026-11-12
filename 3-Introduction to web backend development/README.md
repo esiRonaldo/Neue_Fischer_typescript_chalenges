@@ -479,3 +479,39 @@ The admin functions addPost, updatePost, and deletePost from the MVC challenge a
 SQL Practice Games
 Work through one or more of these interactive SQL games. Each one teaches SQL through a story or puzzle — you write real queries to progress.
 
+# Backend SQL Advanced - Challenges
+Translate this file ↗
+Move the Admin Panel to SQL
+Your blog reads its posts from the database, but the admin panel from the MVC challenge still writes to the array. Move the writes to SQL, so that the database is the only place where your posts live.
+
+Requirements:
+
+addPost(post) runs an INSERT. It stores the slug that slugify builds from the title, and the current time as a Unix timestamp in createdAt.
+updatePost(slug, changes) runs an UPDATE scoped to the post’s slug. A new title also gets a new slug.
+deletePost(slug) runs a DELETE scoped to the post’s slug.
+updatePost and deletePost return whether a row was changed, based on result.changes. The admin controllers answer with a 404 when nothing changed.
+Mark the admin controllers that call these functions as async and await the result.
+Remove the array and writePosts from the model. From now on, every page and every admin action works with the database.
+Use parameterized queries (? or named @ placeholders) for all values. Do not interpolate values directly into the SQL string
+Create a post in the admin panel, restart the server, and check that the post is still there. Verify the changes in DB Browser.
+Hint
+Date.now() counts milliseconds, the posts count seconds: Math.floor(Date.now() / 1000).
+The slug column is UNIQUE. A second post with the same title gets the same slug, and SQLite rejects the INSERT with SQLITE_CONSTRAINT: UNIQUE constraint failed: posts.slug (for a table called posts). Check with getPostBySlug before you save, and show the form again with an error message. The same can happen when an edit renames a post to the title of another post.
+Optional: JSON API for Posts
+Build the routes from the handouts for your blog. They are good practice for the recap project, which asks for the same kind of API.
+
+Parse JSON bodies with app.use(express.json())
+POST /api/posts creates a post from a JSON body and answers with 201 and the slug of the new post
+PUT /api/posts/:slug replaces a post and answers with 200, or with 404 if the slug matches no post
+DELETE /api/posts/:slug answers with 204 and no body, or with 404
+A body without a title or content gets 400
+If you built the Basic Auth bonus in the MVC challenge, protect the three routes with it
+Test each route with a REST client like Bruno and verify the changes in DB Browser
+Optional: Authors Table and JOIN
+Create a separate authors table with at least id and name columns, and fill it with the authors of your posts
+Replace the author column of your posts table with an author_id foreign key, and turn on foreign key checks with PRAGMA foreign_keys = ON in connectDB()
+getAllPosts and getPostBySlug join authors and return the author’s name as author, so that your templates and the author filter keep working
+The admin form offers the authors in a dropdown instead of a text field
+(Optional) Add a user interface to manage authors — create, edit, and delete author records
+Hint
+CREATE TABLE IF NOT EXISTS does not change a table that already exists. After you change the schema in connectDB(), delete db/blog.db, so that the tables are created again, and fill them again with your seed file.
