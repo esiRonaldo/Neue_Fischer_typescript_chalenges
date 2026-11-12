@@ -5,7 +5,11 @@
   <div class="container px-4 px-lg-5">
     <div class="row gx-4 gx-lg-5 justify-content-center">
       <div class="col-md-10 col-lg-8 col-xl-7">
-        <h2 class="mb-4">{{ "Edit post" if post.title else "New post" }}</h2>
+        <h2 class="mb-4">{{ "New post" if action == "/admin/posts" else "Edit post" }}</h2>
+
+        {% if error %}
+          <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
 
         <form method="post" action="{{ action }}">
           {{ forms.formField('title', 'Title', 'text', post.title) }}

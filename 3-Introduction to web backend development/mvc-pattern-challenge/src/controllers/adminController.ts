@@ -45,12 +45,19 @@ export function showNewPostForm(_req: Request, res: Response) {
     res.render("adminForm.html", { post: {}, action: "/admin/posts" });
 }
 
-export function createPost(req: Request, res: Response) {
-    postModel.addPost({
-        ...readPostForm(req.body),
-        createdAt: Math.floor(Date.now() / 1000),
-    });
+export async function createPost(req: Request, res: Response) {
+    const post = readPostForm(req.body);
+    const existing = await postModel.getPostBySlug(postModel.slugify(post.title));
+    if (existing) {
+        res.status(409).render("adminForm.html", {
+            post,
+            action: "/admin/posts",
+            error: "A post with this title already exists",
+        });
+        return;
+    }
 
+    await postModel.addPost(post);
     res.redirect("/admin");
 }
 
@@ -65,9 +72,20 @@ export async function showEditPostForm(req: Request, res: Response) {
     res.render("adminForm.html", { post, action: `/admin/posts/${slug}` });
 }
 
-export function saveEditedPost(req: Request, res: Response) {
+export async function saveEditedPost(req: Request, res: Response) {
     const slug = getSlugParam(req);
-    const found = postModel.updatePost(slug, readPostForm(req.body));
+    const changes = readPostForm(req.body);
+    const newSlug = postModel.slugify(changes.title);
+    if (newSlug !== slug && (await postModel.getPostBySlug(newSlug))) {
+        res.status(409).render("adminForm.html", {
+            post: changes,
+            action: `/admin/posts/${slug}`,
+            error: "A post with this title already exists",
+        });
+        return;
+    }
+
+    const found = await postModel.updatePost(slug, changes);
     if (!found) {
         res.status(404).send("Post not found");
         return;
@@ -76,9 +94,9 @@ export function saveEditedPost(req: Request, res: Response) {
     res.redirect("/admin");
 }
 
-export function removePost(req: Request, res: Response) {
+export async function removePost(req: Request, res: Response) {
     const slug = getSlugParam(req);
-    const found = postModel.deletePost(slug);
+    const found = await postModel.deletePost(slug);
     if (!found) {
         res.status(404).send("Post not found");
         return;
