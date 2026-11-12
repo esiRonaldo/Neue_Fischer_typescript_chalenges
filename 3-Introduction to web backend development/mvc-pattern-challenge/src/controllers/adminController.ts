@@ -38,18 +38,18 @@ export async function listAdminPosts(_req: Request, res: Response) {
         slug: postModel.slugify(post.title),
     }));
 
-    res.render("admin.html", { posts });
+    res.render("admin/admin.html", { posts });
 }
 
 export function showNewPostForm(_req: Request, res: Response) {
-    res.render("adminForm.html", { post: {}, action: "/admin/posts" });
+    res.render("admin/adminForm.html", { post: {}, action: "/admin/posts" });
 }
 
 export async function createPost(req: Request, res: Response) {
     const post = readPostForm(req.body);
     const existing = await postModel.getPostBySlug(postModel.slugify(post.title));
     if (existing) {
-        res.status(409).render("adminForm.html", {
+        res.status(409).render("admin/adminForm.html", {
             post,
             action: "/admin/posts",
             error: "A post with this title already exists",
@@ -69,7 +69,7 @@ export async function showEditPostForm(req: Request, res: Response) {
         return;
     }
 
-    res.render("adminForm.html", { post, action: `/admin/posts/${slug}` });
+    res.render("admin/adminForm.html", { post, action: `/admin/posts/${slug}` });
 }
 
 export async function saveEditedPost(req: Request, res: Response) {
@@ -77,7 +77,7 @@ export async function saveEditedPost(req: Request, res: Response) {
     const changes = readPostForm(req.body);
     const newSlug = postModel.slugify(changes.title);
     if (newSlug !== slug && (await postModel.getPostBySlug(newSlug))) {
-        res.status(409).render("adminForm.html", {
+        res.status(409).render("admin/adminForm.html", {
             post: changes,
             action: `/admin/posts/${slug}`,
             error: "A post with this title already exists",

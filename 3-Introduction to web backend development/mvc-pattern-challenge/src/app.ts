@@ -18,6 +18,7 @@ const projectRoot = path.resolve(__dirname, "..");
 const assetsDir = path.join(projectRoot, "src", "assets");
 const cssDir = path.join(projectRoot, "src", "css");
 const jsDir = path.join(projectRoot, "src", "js");
+const viewsDir = path.join(projectRoot, "views");
 
 await connectDB();
 await seedDB();
@@ -27,7 +28,7 @@ async function shutdown() {
   process.exit(0);
 }
 
-nunjucks.configure(projectRoot, { autoescape: true, express: app });
+nunjucks.configure(viewsDir, { autoescape: true, express: app });
 app.use("/assets", express.static(assetsDir));
 app.use("/css", express.static(cssDir));
 app.use("/js", express.static(jsDir));
