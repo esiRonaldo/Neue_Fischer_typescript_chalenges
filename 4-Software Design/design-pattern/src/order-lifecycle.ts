@@ -80,12 +80,14 @@ console.log(order.state);
 
 // 2. Cancel after payment
 const cancelledOrder = new Order();
+console.log('+++++++++++++++++++++++');
 cancelledOrder.checkout();
 cancelledOrder.receivePayment();
 cancelledOrder.cancel();
 console.log(cancelledOrder.state);
 
 // 3. Dispatch an unpaid order → error
+console.log('***********************');
 const unpaidOrder = new Order();
 unpaidOrder.checkout();
 try {
