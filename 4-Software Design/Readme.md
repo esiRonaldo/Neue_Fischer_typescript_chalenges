@@ -744,3 +744,206 @@ console.log(cache.get("b"), cache.get("a"), cache.get("c"));
 
 Hint
 A Map remembers the order in which its keys were inserted, and map.keys().next().value returns the oldest key. Deleting a key and setting it again moves it to the end. The handout describes the classic version with a hash map and a doubly linked list. Build that one if you want to go further.
+
+# Software Design Patterns - Challenges
+Translate this file ↗
+These exercises test your ability to apply design patterns in realistic scenarios. The first three ask you to design a solution from scratch. The fourth one gives you existing, tightly coupled code that you should refactor using the concepts from this session.
+
+Each challenge is written like a ticket in a real project. The acceptance criteria describe what the result must do, and the technical requirements name the patterns to use. How you get there is up to you. If you get stuck, open the step-by-step guide below the ticket.
+
+Summoning Circle
+In a fantasy game, the player puts ingredients into a summoning circle, and a creature appears that matches the ingredient. The game designers keep inventing new creatures, so the code that summons them should not have to change everywhere for each new one.
+
+Challenge
+0/5
+Summoning Circle
+Acceptance criteria
+
+
+Each ingredient (fire, air, sparkles) summons a different creature
+
+Every creature has a name, and when it uses its ability, it logs what it does, for example Dragon breathes fire
+
+An unknown ingredient throws an error that names the ingredient
+Technical requirements
+
+
+A SummoningCircle class with a method summon(ingredient: string) works as a factory
+
+The calling code only knows a shared Creature interface, never the concrete creature classes
+Done when
+A script summons one creature per ingredient, lets each one use its ability, and catches the error for an unknown ingredient.
+
+Step by step
+Define an interface Creature with a name: string and a method useAbility(): void that logs what the creature does.
+Create one class per creature that implements Creature, for example Dragon (breathes fire), Phoenix (is reborn from its ashes), and Unicorn (dances on a rainbow).
+Create the class SummoningCircle with a method summon(ingredient: string): Creature. A switch statement picks the class to create for each ingredient.
+Add a default case that throws an error with the unknown ingredient in its message.
+Call summon() with each ingredient and call useAbility() on the result. Then call it with an unknown ingredient inside try/catch.
+API Request Builder
+Your team sends HTTP requests from many places in the code. Right now, every call passes one large configuration object full of optional fields, and invalid requests, like a POST without a body, are only noticed when the server rejects them. Requests should be assembled step by step, and invalid ones should fail before they are sent.
+
+Challenge
+0/6
+API Request Builder
+Acceptance criteria
+
+
+A request with method, URL, headers, query parameters, and a JSON body can be assembled in one chained expression
+
+Building a request without a URL throws an error
+
+Building a POST request without a body throws an error
+
+TypeScript reports an error when code tries to change a finished request
+Technical requirements
+
+
+A RequestBuilder class with chainable methods and a build() method (Builder pattern)
+
+build() is the only place that validates the parts and creates the finished HttpRequest
+Done when
+One chained call builds a valid GET request and another a valid POST request, and both invalid cases throw errors with clear messages.
+
+Step by step
+Define an interface HttpRequest with readonly properties for method, url, headers, query, and an optional body. Use Readonly<Record<string, string>> for headers and query, so that their entries cannot change either.
+Create the class RequestBuilder. It keeps the parts set so far in private fields.
+Add the methods withMethod(), withUrl(), withHeader(name, value), withQuery(name, value), and withJsonBody(body). Each one stores its value and returns this.
+Write build(). It throws an error if no URL was set, or if the method is POST and no body was set. Otherwise, it returns a new HttpRequest.
+Try to assign a new url to a built request, and check that TypeScript reports an error.
+Hint
+Don’t name your type Request. The browser and Node.js already have a global Request type from the Fetch API, and in a file without import or export, TypeScript reports a duplicate identifier.
+
+Order Lifecycle
+An online shop tracks every order from the shopping cart to the customer’s door. Support keeps finding orders in impossible situations, like orders that were shipped without being paid. The Order class should only allow the changes that make sense in its current state.
+
+Challenge
+0/5
+Order Lifecycle
+Acceptance criteria
+
+
+A new order starts in the state Draft
+
+The order allows exactly these transitions:
+checkout: Draft → AwaitingPayment
+payment_received: AwaitingPayment → Paid
+dispatch: Paid → Shipped
+confirm_delivery: Shipped → Delivered
+cancel: Draft, AwaitingPayment, or Paid → Cancelled
+
+Any other event throws an error that names the event and the current state
+Technical requirements
+
+
+The state is a single field with a union type, not several booleans
+
+All legal transitions are listed in one transition table
+Done when
+A script runs one order from Draft to Delivered, cancels a second order after payment, and catches the error when it tries to dispatch an unpaid order.
+
+Step by step
+Log Exporter Refactoring
+The log exporter below works, but it is hard to test and hard to extend. It opens its own database connection, so every test needs a database. And every new output format means another branch in the same method. In terms of design principles, it breaks the Single Responsibility Principle and the Open/Closed Principle. The ops team wants more formats soon, and tests should run without a database.
+
+interface LogEntry {
+  timestamp: string;
+  level: "info" | "warn" | "error";
+  message: string;
+}
+
+function getMockDB() {
+  return {
+    async query(_sql: string): Promise<LogEntry[]> {
+      return [
+        {
+          timestamp: "2026-03-02T09:00:00Z",
+          level: "info",
+          message: "Server started",
+        },
+        {
+          timestamp: "2026-03-02T09:05:12Z",
+          level: "warn",
+          message: "Slow response",
+        },
+        {
+          timestamp: "2026-03-02T09:07:40Z",
+          level: "error",
+          message: "Database timeout",
+        },
+      ];
+    },
+  };
+}
+
+class LogExporter {
+  async exportLogs(format: "json" | "csv" | "xml") {
+    const db = getMockDB();
+    const logs = await db.query("SELECT * FROM system_logs");
+
+    if (format === "json") {
+      return JSON.stringify(logs);
+    } else if (format === "csv") {
+      return logs
+        .map((l) => `${l.timestamp},${l.level},${l.message}`)
+        .join("\n");
+    } else if (format === "xml") {
+      return `<logs>${logs.map((l) => `<log>${l.message}</log>`).join("")}</logs>`;
+    } else {
+      throw new Error("Unknown format");
+    }
+  }
+}
+
+Challenge
+0/6
+Log Exporter Refactoring
+Acceptance criteria
+
+
+All three formats produce exactly the same output as before the refactoring
+
+LogExporter can be tested with a fixed list of log entries, without any database
+
+Adding a fourth format, like YAML, requires no change to LogExporter
+Technical requirements
+
+
+A LogRepository interface hides the data access, and LogExporter receives it through its constructor (Repository and Dependency Injection)
+
+Each format is its own class behind a shared LogFormatter interface (Strategy), and a factory picks the formatter for a format string (Factory)
+
+LogExporter contains no if/else chain or switch on the format
+Done when
+The refactored exporter, wired with an in-memory repository, prints the same JSON, CSV, and XML as the original code.
+
+Step by step
+Before you change anything, run the original code once per format and save the output, so that you can compare later.
+Define an interface LogRepository with a method findAll(): Promise<LogEntry[]>. Write two implementations: DatabaseLogRepository, which runs the query from the original code, and InMemoryLogRepository, which returns the entries you pass to its constructor.
+Change LogExporter, so that it receives a LogRepository in its constructor and no longer calls getMockDB().
+Define an interface LogFormatter with a method format(logs: LogEntry[]): string. Move each branch into its own class: JsonFormatter, CsvFormatter, and XmlFormatter.
+Write a factory createFormatter(format: string): LogFormatter that returns the matching formatter and throws an error for an unknown format.
+Let exportLogs() ask the factory for a formatter and return its result. Compare the output with the one you saved in step 1.
+Bonus: Order Notifications
+When an order changes its state, other parts of the shop need to react. The warehouse reserves the items as soon as an order is paid, and the customer gets an email when it ships. The Order class from the order lifecycle ticket should not know anything about emails or the warehouse.
+
+Challenge
+0/4
+Order Notifications
+Acceptance criteria
+
+
+When an order is paid, the warehouse logs a reservation message
+
+When an order is shipped, a simulated email is logged
+
+A new reaction to state changes can be added without changing the Order class
+Technical requirements
+
+
+Order lets listeners subscribe and notifies all of them after every transition, with the old and the new state (Observer)
+Done when
+Running one order from Draft to Delivered logs the reservation once and the email once.
+
+Hint
+Define a listener type like (from: OrderState, to: OrderState) => void, and call every listener at the end of transition(), after the state has changed.
