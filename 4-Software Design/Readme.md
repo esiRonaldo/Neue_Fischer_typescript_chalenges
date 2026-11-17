@@ -843,6 +843,14 @@ Done when
 A script runs one order from Draft to Delivered, cancels a second order after payment, and catches the error when it tries to dispatch an unpaid order.
 
 Step by step
+Define the union types OrderState and OrderEvent with the values from the acceptance criteria.
+Write the transition table as a Record<OrderState, Partial<Record<OrderEvent, OrderState>>>. States without outgoing transitions get an empty object.
+Create the class Order with a private state field that starts as "Draft", and a getter that returns the current state.
+Write a method transition(event: OrderEvent). It looks up the next state in the table, throws an error if there is none, and updates the state otherwise.
+Optionally, add one method per event, like checkout() or cancel(), that calls transition().
+
+
+
 Log Exporter Refactoring
 The log exporter below works, but it is hard to test and hard to extend. It opens its own database connection, so every test needs a database. And every new output format means another branch in the same method. In terms of design principles, it breaks the Single Responsibility Principle and the Open/Closed Principle. The ops team wants more formats soon, and tests should run without a database.
 
