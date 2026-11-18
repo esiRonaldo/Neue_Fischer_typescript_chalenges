@@ -43,27 +43,37 @@ const loans: Loan[] = [
     },
 ];
 
+const DAILY_FEE_CENTS = 50;
+const MAX_FEE_CENTS = 1000;
+
+function calculateFee(daysOverdue: number): number {
+    return Math.min(daysOverdue * DAILY_FEE_CENTS, MAX_FEE_CENTS);
+}
+
+function getDaysOverdue(loan: Loan, today: string): number {
+    return Math.floor((Date.parse(today) - Date.parse(loan.dueDate)) / 86_400_000);
+}
+
+function formatEuro(cents: number): string {
+    return `${(cents / 100).toFixed(2)} EUR`;
+}
+
+function getOverdueLoans(loans: Loan[], today: string): Loan[] {
+    return loans.filter(
+        (loan) => loan.returnedDate === null && getDaysOverdue(loan, today) > 0,
+    );
+}
+
 function printOverdueReport(loans: Loan[], today: string): void {
     console.log("Overdue report");
     let total = 0;
-    for (const loan of loans) {
-        if (loan.returnedDate === null) {
-            const days = Math.floor(
-                (Date.parse(today) - Date.parse(loan.dueDate)) / 86_400_000,
-            );
-            if (days > 0) {
-                let fee = days * 50;
-                if (fee > 1000) {
-                    fee = 1000;
-                }
-                total += fee;
-                console.log(
-                    `${loan.title} (member #${loan.memberId}): ${days} days, ${(fee / 100).toFixed(2)} EUR`,
-                );
-            }
-        }
+    for (const loan of getOverdueLoans(loans, today)) {
+        const days = getDaysOverdue(loan, today);
+        const fee = calculateFee(days);
+        total += fee;
+        console.log(`${loan.title} (member #${loan.memberId}): ${days} days, ${formatEuro(fee)}`);
     }
-    console.log(`Total: ${(total / 100).toFixed(2)} EUR`);
+    console.log(`Total: ${formatEuro(total)}`);
 }
 
 function getMemberFee(loans: Loan[], memberId: string, today: string): number {
@@ -74,7 +84,7 @@ function getMemberFee(loans: Loan[], memberId: string, today: string): number {
                 (Date.parse(today) - Date.parse(loan.dueDate)) / 86_400_000,
             );
             if (days > 0) {
-                total += Math.min(days * 50, 1000);
+                total += calculateFee(days);
             }
         }
     }
