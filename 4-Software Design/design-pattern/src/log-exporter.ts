@@ -99,8 +99,10 @@ class LogExporter {
         this.#repository = repository
     }
 
-    async exportLogs(format: "json" | "csv" | "xml") {
+    async exportLogs(format: string): Promise<string> {
         const logs = await this.#repository.findAll()
+        const formatter = createFormatter(format)
+        return formatter.format(logs)
         // we add the instance instead of writing db here
         // const db = getMockDB(); 
         // console.log('db')
@@ -108,30 +110,17 @@ class LogExporter {
         // const logs = await db.query("SELECT * FROM system_logs");
         // console.log('logs')
         // console.log(logs)
-
-
-        if (format === "json") {
-            console.log(logs)
-
-            return JSON.stringify(logs);
-        } else if (format === "csv") {
-            return logs
-                .map((l) => `${l.timestamp},${l.level},${l.message}`)
-                .join("\n");
-        } else if (format === "xml") {
-            return `<logs>${logs.map((l) => `<log>${l.message}</log>`).join("")}</logs>`;
-        } else {
-            throw new Error("Unknown format");
-        }
     }
 }
 
-const exporter = new LogExporter(new DatabaseLogRepository());
+const entries: LogEntry[] = [
+    { timestamp: "2026-03-02T09:00:00Z", level: "info", message: "Server started" },
+    { timestamp: "2026-03-02T09:05:12Z", level: "warn", message: "Slow response" },
+    { timestamp: "2026-03-02T09:07:40Z", level: "error", message: "Database timeout" },
+];
 
-console.log('*********************');
+const exporter = new LogExporter(new InMemoryLogRepository(entries));
+
 console.log(await exporter.exportLogs("json"));
-console.log('----------------');
 console.log(await exporter.exportLogs("csv"));
-console.log('++++++++++++++++++++');
 console.log(await exporter.exportLogs("xml"));
-console.log('===================');
