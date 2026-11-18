@@ -63,3 +63,10 @@ class NotificationService {
         return this.#channels.map((channel) => channel.getChannelName());
     }
 }
+
+const service = new NotificationService([
+    new EmailNotifier(),
+    new SmsNotifier(),
+]);
+console.log(service.getChannelNames());
+service.dispatch("42", "reservation", "Dune");
