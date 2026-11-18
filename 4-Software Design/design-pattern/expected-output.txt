@@ -1,0 +1,5 @@
+[{"timestamp":"2026-03-02T09:00:00Z","level":"info","message":"Server started"},{"timestamp":"2026-03-02T09:05:12Z","level":"warn","message":"Slow response"},{"timestamp":"2026-03-02T09:07:40Z","level":"error","message":"Database timeout"}]
+2026-03-02T09:00:00Z,info,Server started
+2026-03-02T09:05:12Z,warn,Slow response
+2026-03-02T09:07:40Z,error,Database timeout
+<logs><log>Server started</log><log>Slow response</log><log>Database timeout</log></logs>
