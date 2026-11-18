@@ -49,8 +49,7 @@ type BookResponse = {
     authorName: string
     addedAt: string
 }
-//TODO: all pure why?
-//MVC Model calls ...?
+// Pure: same row in, same response out, and it only builds a new object.
 function toBookResponse(row: BookRow): BookResponse {
     return {
         id: row.id,
@@ -60,13 +59,24 @@ function toBookResponse(row: BookRow): BookResponse {
     };
 }
 
+// Pure: filter and map return new arrays, the input array is not changed.
 function getAvailableBooks(rows: BookRow[]): BookResponse[] {
     return rows
         .filter(row => row.is_available === 1)
         .map(toBookResponse)
 }
 
+// Pure: toSorted returns a sorted copy, so the caller's array keeps its order.
 function sortNewestFirst(rows: BookRow[]): BookRow[] {
     return rows.toSorted((a, b) => b.added_at - a.added_at);
 }
+
+// GET /api/books in an Express app:
+// - The model runs the SQL query (SELECT * FROM books) and returns BookRow[].
+// - The controller sends the response with res.json(...).
+// - The controller calls getAvailableBooks (and sortNewestFirst) between the two:
+//   it gets the rows from the model, turns them into BookResponse[] with the
+//   pure functions, and then sends the result.
+// The SQL query and res.json are the side effects at the edges; the pure
+// functions in the middle need no database and no request to test.
 console.log(getAvailableBooks(sortNewestFirst(bookRows)))
