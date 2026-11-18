@@ -45,8 +45,9 @@ class RequestBuilder {
         if (this.#url === undefined) {
             throw new Error("Cannot build request: URL is missing");
         }
-        if (this.#method === "POST" && this.#body === undefined) {
-            throw new Error("Cannot build request: POST needs a body");
+        const needsBody = this.#method === "POST" || this.#method === "PUT" || this.#method === "PATCH";
+        if (needsBody && this.#body === undefined) {
+            throw new Error(`Cannot build request: ${this.#method} needs a body`);
         }
 
         return {
