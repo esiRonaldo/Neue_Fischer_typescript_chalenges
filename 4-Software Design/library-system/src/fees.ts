@@ -77,18 +77,9 @@ function printOverdueReport(loans: Loan[], today: string): void {
 }
 
 function getMemberFee(loans: Loan[], memberId: string, today: string): number {
-    let total = 0;
-    for (const loan of loans) {
-        if (loan.memberId === memberId && loan.returnedDate === null) {
-            const days = Math.floor(
-                (Date.parse(today) - Date.parse(loan.dueDate)) / 86_400_000,
-            );
-            if (days > 0) {
-                total += calculateFee(days);
-            }
-        }
-    }
-    return total;
+    return getOverdueLoans(loans, today)
+        .filter((loan) => loan.memberId === memberId)
+        .reduce((total, loan) => total + calculateFee(getDaysOverdue(loan, today)), 0);
 }
 
 printOverdueReport(loans, "2024-11-20");
