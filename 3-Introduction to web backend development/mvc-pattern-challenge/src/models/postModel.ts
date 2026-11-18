@@ -9,6 +9,22 @@ export interface Post {
     content: string;
 }
 
+export interface Author {
+    id: number;
+    name: string;
+}
+
+export async function getAllAuthors(): Promise<Author[]> {
+    const db = getDB();
+    return db.all<Author[]>("SELECT id, name FROM authors ORDER BY name");
+}
+
+export async function authorExists(name: string): Promise<boolean> {
+    const db = getDB();
+    const row = await db.get("SELECT 1 FROM authors WHERE name = ?", name);
+    return row !== undefined;
+}
+
 export function slugify(title: string): string {
     return title
         .toLowerCase()
@@ -19,14 +35,21 @@ export function slugify(title: string): string {
 export async function getAllPosts(): Promise<Post[]> {
     const db = getDB();
     return db.all<Post[]>(
-        "SELECT title, image, author, createdAt, teaser, content FROM posts",
+        `SELECT posts.title, posts.image, authors.name AS author,
+                posts.createdAt, posts.teaser, posts.content
+         FROM posts
+         JOIN authors ON authors.id = posts.author_id`,
     );
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | undefined> {
     const db = getDB();
     return db.get<Post>(
-        "SELECT title, image, author, createdAt, teaser, content FROM posts WHERE slug = ?",
+        `SELECT posts.title, posts.image, authors.name AS author,
+                posts.createdAt, posts.teaser, posts.content
+         FROM posts
+         JOIN authors ON authors.id = posts.author_id
+         WHERE posts.slug = ?`,
         slug,
     );
 }
@@ -34,8 +57,8 @@ export async function getPostBySlug(slug: string): Promise<Post | undefined> {
 export async function addPost(post: Omit<Post, "createdAt">): Promise<void> {
     const db = getDB();
     await db.run(
-        `INSERT INTO posts (slug, title, image, author, createdAt, teaser, content)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO posts (slug, title, image, author_id, createdAt, teaser, content)
+         VALUES (?, ?, ?, (SELECT id FROM authors WHERE name = ?), ?, ?, ?)`,
         slugify(post.title),
         post.title,
         post.image,
@@ -53,7 +76,9 @@ export async function updatePost(
     const db = getDB();
     const result = await db.run(
         `UPDATE posts
-         SET slug = ?, title = ?, image = ?, author = ?, teaser = ?, content = ?
+         SET slug = ?, title = ?, image = ?,
+             author_id = (SELECT id FROM authors WHERE name = ?),
+             teaser = ?, content = ?
          WHERE slug = ?`,
         slugify(changes.title),
         changes.title,

@@ -2,6 +2,15 @@ import type { Request, Response } from "express";
 import * as postModel from "../models/postModel";
 import { readPostInput, getSlugParam } from "../utils/postInput";
 
+async function renderPostForm(
+    res: Response,
+    status: number,
+    data: { post: object; action: string; error?: string },
+) {
+    const authors = await postModel.getAllAuthors();
+    res.status(status).render("admin/adminForm.html", { ...data, authors });
+}
+
 export async function listAdminPosts(_req: Request, res: Response) {
     const posts = (await postModel.getAllPosts()).map((post) => ({
         ...post,
@@ -11,15 +20,24 @@ export async function listAdminPosts(_req: Request, res: Response) {
     res.render("admin/admin.html", { posts });
 }
 
-export function showNewPostForm(_req: Request, res: Response) {
-    res.render("admin/adminForm.html", { post: {}, action: "/admin/posts" });
+export async function showNewPostForm(_req: Request, res: Response) {
+    await renderPostForm(res, 200, { post: {}, action: "/admin/posts" });
 }
 
 export async function createPost(req: Request, res: Response) {
     const post = readPostInput(req.body);
+    if (!(await postModel.authorExists(post.author))) {
+        await renderPostForm(res, 400, {
+            post,
+            action: "/admin/posts",
+            error: "Please choose an author",
+        });
+        return;
+    }
+
     const existing = await postModel.getPostBySlug(postModel.slugify(post.title));
     if (existing) {
-        res.status(409).render("admin/adminForm.html", {
+        await renderPostForm(res, 409, {
             post,
             action: "/admin/posts",
             error: "A post with this title already exists",
@@ -39,15 +57,24 @@ export async function showEditPostForm(req: Request, res: Response) {
         return;
     }
 
-    res.render("admin/adminForm.html", { post, action: `/admin/posts/${slug}` });
+    await renderPostForm(res, 200, { post, action: `/admin/posts/${slug}` });
 }
 
 export async function saveEditedPost(req: Request, res: Response) {
     const slug = getSlugParam(req);
     const changes = readPostInput(req.body);
+    if (!(await postModel.authorExists(changes.author))) {
+        await renderPostForm(res, 400, {
+            post: changes,
+            action: `/admin/posts/${slug}`,
+            error: "Please choose an author",
+        });
+        return;
+    }
+
     const newSlug = postModel.slugify(changes.title);
     if (newSlug !== slug && (await postModel.getPostBySlug(newSlug))) {
-        res.status(409).render("admin/adminForm.html", {
+        await renderPostForm(res, 409, {
             post: changes,
             action: `/admin/posts/${slug}`,
             error: "A post with this title already exists",

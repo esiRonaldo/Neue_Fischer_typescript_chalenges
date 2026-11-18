@@ -1,6 +1,8 @@
 import { getDB } from "./database";
 import { slugify, type Post } from "../models/postModel";
 
+const seedAuthors = ["Peter Parker"];
+
 const seedPosts: Post[] = [
     {
         title: "Black: The Absence, Not the Presence, of Color",
@@ -38,19 +40,30 @@ export async function seedDB(): Promise<void> {
     if (process.env.NODE_ENV !== "development") return;
 
     const db = getDB();
+
+    for (const name of seedAuthors) {
+        await db.run("INSERT OR IGNORE INTO authors (name) VALUES (?)", name);
+    }
+
     const row = await db.get<{ count: number }>(
         "SELECT COUNT(*) AS count FROM posts",
     );
     if (row && row.count > 0) return;
 
     for (const post of seedPosts) {
+        const author = await db.get<{ id: number }>(
+            "SELECT id FROM authors WHERE name = ?",
+            post.author,
+        );
+        if (!author) throw new Error(`Unknown author: ${post.author}`);
+
         await db.run(
-            `INSERT INTO posts (slug, title, image, author, createdAt, teaser, content)
+            `INSERT INTO posts (slug, title, image, author_id, createdAt, teaser, content)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
             slugify(post.title),
             post.title,
             post.image,
-            post.author,
+            author.id,
             post.createdAt,
             post.teaser,
             post.content,

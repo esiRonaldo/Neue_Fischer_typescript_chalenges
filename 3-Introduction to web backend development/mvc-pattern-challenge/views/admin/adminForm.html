@@ -13,7 +13,17 @@
 
         <form method="post" action="{{ action }}">
           {{ forms.formField('title', 'Title', 'text', post.title) }}
-          {{ forms.formField('author', 'Author', 'text', post.author) }}
+          <div class="form-floating">
+            <select class="form-select" id="author" name="author">
+              <option value="" disabled {% if not post.author %}selected{% endif %}>Choose an author</option>
+              {% for author in authors %}
+                <option value="{{ author.name }}" {% if author.name == post.author %}selected{% endif %}>
+                  {{ author.name }}
+                </option>
+              {% endfor %}
+            </select>
+            <label for="author">Author</label>
+          </div>
           {{ forms.formField('image', 'Image file name', 'text', post.image) }}
           {{ forms.formField('teaser', 'Teaser', 'text', post.teaser) }}
           {{ forms.formField('content', 'Content (HTML)', 'textarea', post.content) }}

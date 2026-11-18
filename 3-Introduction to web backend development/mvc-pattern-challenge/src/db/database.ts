@@ -11,13 +11,20 @@ export async function connectDB(): Promise<Database> {
         filename: DB_FILE,
         driver: sqlite3.Database
     })
+    await db.run("PRAGMA foreign_keys = ON")
+    await db.run(`
+  CREATE TABLE IF NOT EXISTS authors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+  )
+`)
     await db.run(`
   CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     slug TEXT NOT NULL UNIQUE,
     title TEXT NOT NULL,
     image TEXT NOT NULL,
-    author TEXT NOT NULL,
+    author_id INTEGER NOT NULL REFERENCES authors(id),
     createdAt INTEGER NOT NULL,
     teaser TEXT NOT NULL,
     content TEXT NOT NULL

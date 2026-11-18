@@ -16,6 +16,11 @@ export async function createPostApi(req: Request, res: Response) {
         return;
     }
 
+    if (!(await postModel.authorExists(post.author))) {
+        res.status(400).json({ error: `Unknown author: ${post.author}` });
+        return;
+    }
+
     const slug = postModel.slugify(post.title);
     if (await postModel.getPostBySlug(slug)) {
         res.status(409).json({ error: "A post with this title already exists" });
@@ -32,6 +37,11 @@ export async function replacePostApi(req: Request, res: Response) {
     const missing = findMissingField(post);
     if (missing) {
         res.status(400).json({ error: `Missing required field: ${missing}` });
+        return;
+    }
+
+    if (!(await postModel.authorExists(post.author))) {
+        res.status(400).json({ error: `Unknown author: ${post.author}` });
         return;
     }
 
