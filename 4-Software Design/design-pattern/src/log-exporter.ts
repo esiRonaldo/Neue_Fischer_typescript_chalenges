@@ -52,16 +52,64 @@ class InMemoryLogRepository implements LogRepository {
     }
 }
 
-class LogExporter {
-    async exportLogs(format: "json" | "csv" | "xml") {
-        const db = getMockDB();
-        console.log('db')
-        console.log(db)
-        const logs = await db.query("SELECT * FROM system_logs");
-        console.log('logs')
-        console.log(logs)
+// Strategy
+interface LogFormatter {
+    format(logs: LogEntry[]): string
+}
 
-        
+class JsonFormatter implements LogFormatter {
+    format(logs: LogEntry[]): string {
+        return JSON.stringify(logs)
+    }
+}
+
+class CsvFormatter implements LogFormatter {
+    format(logs: LogEntry[]): string {
+        return logs
+            .map((l) => `${l.timestamp},${l.level},${l.message}`)
+            .join("\n")
+    }
+}
+
+class XmlFormatter implements LogFormatter {
+    format(logs: LogEntry[]): string {
+        return `<logs>${logs.map((l) => `<log>${l.message}</log>`).join("")}</logs>`;
+    }
+}
+
+//Factory
+function createFormatter(format: string): LogFormatter {
+    switch (format) {
+        case 'json':
+            return new JsonFormatter()
+        case 'csv':
+            return new CsvFormatter()
+        case 'xml':
+            return new XmlFormatter()
+        default:
+            throw new Error(`Unknown format: ${format}`)
+    }
+}
+
+//Dependency Injection
+class LogExporter {
+    #repository: LogRepository
+
+    constructor(repository: LogRepository) {
+        this.#repository = repository
+    }
+
+    async exportLogs(format: "json" | "csv" | "xml") {
+        const logs = await this.#repository.findAll()
+        // we add the instance instead of writing db here
+        // const db = getMockDB(); 
+        // console.log('db')
+        // console.log(db)
+        // const logs = await db.query("SELECT * FROM system_logs");
+        // console.log('logs')
+        // console.log(logs)
+
+
         if (format === "json") {
             console.log(logs)
 
@@ -78,7 +126,7 @@ class LogExporter {
     }
 }
 
-const exporter = new LogExporter();
+const exporter = new LogExporter(new DatabaseLogRepository());
 
 console.log('*********************');
 console.log(await exporter.exportLogs("json"));
