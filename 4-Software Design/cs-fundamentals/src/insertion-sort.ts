@@ -45,3 +45,12 @@ console.log(insertionSort([10, 9, 8, 7, 6, 5, 4, 3, 2, 1]).comparisons);
 // [5, 4, 3, 2, 1]                    → 10
 // [42]                               → 0
 // [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]    → 45
+//
+// Why the reversed arrays cost so much more:
+// In a sorted array every element is compared once with its left neighbor,
+// sees that it is already in place, and stops. That is n - 1 comparisons (best case, O(n)).
+// In a reversed array every element is smaller than everything on its left,
+// so it has to slide all the way to the front: 1 + 2 + ... + (n - 1) = n(n - 1) / 2
+// comparisons (worst case, O(n²)).
+// From 5 to 10 reversed elements the input doubles, but the count goes from 10 to 45,
+// about four times as much. Doubling n and getting about 4× the work is O(n²).
