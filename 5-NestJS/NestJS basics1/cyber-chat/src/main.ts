@@ -1,4 +1,4 @@
-import { Controller, Get, Injectable, Module } from '@nestjs/common';
+import { Controller, Get, Injectable, Module, Query } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 
 
@@ -57,12 +57,20 @@ function byMostThreadsThenName(a: AuthorStat, b: AuthorStat): number {
   return b.threads - a.threads || a.author.localeCompare(b.author);
 }
 
+function sortNewestFirst(threads: readonly Thread[]): Thread[] {
+  return threads.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+}
+
 @Injectable()
 class ThreadService {
   private readonly threads: readonly Thread[] = sampleThreads
 
-  findAll(): readonly Thread[] {
-    return this.threads
+  findAll(author?: string): Thread[] {
+    const threads = author === undefined
+      ? this.threads
+      : this.threads.filter((thread) => thread.author === author)
+
+    return sortNewestFirst(threads)
   }
 }
 
@@ -97,8 +105,8 @@ class ThreadController {
   ) { }
 
   @Get('threads')
-  findAll() {
-    return this.threadService.findAll()
+  findAll(@Query('author') author?: string) {
+    return this.threadService.findAll(author)
   }
 
   @Get('threads/authors')
