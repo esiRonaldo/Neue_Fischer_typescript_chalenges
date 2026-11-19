@@ -48,29 +48,68 @@ const sampleThreads: Thread[] = [
   },
 ];
 
+type AuthorStat = {
+  author: string;
+  threads: number;
+};
+
+function byMostThreadsThenName(a: AuthorStat, b: AuthorStat): number {
+  return b.threads - a.threads || a.author.localeCompare(b.author);
+}
+
 @Injectable()
 class ThreadService {
-  private readonly threads: Thread[] = sampleThreads
+  private readonly threads: readonly Thread[] = sampleThreads
 
-  findAll(): Thread[] {
+  findAll(): readonly Thread[] {
     return this.threads
   }
 }
 
+@Injectable()
+class AuthorService {
+  constructor(private readonly threadService: ThreadService) { }
+
+  getAuthorStats(): AuthorStat[] {
+    const threads = this.threadService.findAll();
+    const counts = new Map<string, number>();
+
+    for (const thread of threads) {
+      const author = thread.author;
+      const current = counts.get(author) ?? 0;
+      counts.set(author, current + 1);
+    }
+
+    const result = Array.from(counts, ([author, threads]) => ({
+      author,
+      threads,
+    }));
+
+    return result.sort(byMostThreadsThenName);
+  }
+}
 
 @Controller()
 class ThreadController {
-  constructor(private readonly threadService: ThreadService) { }
+  constructor(
+    private readonly threadService: ThreadService,
+    private readonly authorService: AuthorService,
+  ) { }
 
   @Get('threads')
   findAll() {
     return this.threadService.findAll()
   }
+
+  @Get('threads/authors')
+  getAuthorStats() {
+    return this.authorService.getAuthorStats()
+  }
 }
 
 @Module({
   controllers: [ThreadController],
-  providers: [ThreadService],
+  providers: [ThreadService, AuthorService],
 })
 class AppModule { }
 
