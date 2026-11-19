@@ -57,6 +57,10 @@ function byMostThreadsThenName(a: AuthorStat, b: AuthorStat): number {
   return b.threads - a.threads || a.author.localeCompare(b.author);
 }
 
+function sortByMostThreads(stats: readonly AuthorStat[]): AuthorStat[] {
+  return stats.toSorted(byMostThreadsThenName)
+}
+
 function sortNewestFirst(threads: readonly Thread[]): Thread[] {
   return threads.toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 }
@@ -93,7 +97,7 @@ class AuthorService {
       threads,
     }));
 
-    return result.sort(byMostThreadsThenName);
+    return sortByMostThreads(result);
   }
 }
 
