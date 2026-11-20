@@ -1,9 +1,10 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ThreadsService } from './threads.service.js';
+import type { ThreadPayload } from './thread.js';
 
 @Controller('threads')
 export class ThreadsController {
-  constructor(private readonly threadsService: ThreadsService) {}
+  constructor(private readonly threadsService: ThreadsService) { }
 
   @Get()
   findAll(@Query('author') author?: string) {
@@ -13,5 +14,15 @@ export class ThreadsController {
   @Get('authors')
   getAuthorStats() {
     return this.threadsService.getAuthorStats();
+  }
+
+  @Get(':id')
+  findById(@Param('id') id: string) {
+    return this.threadsService.findById(id);
+  }
+
+  @Post()
+  create(@Body() payload: ThreadPayload) {
+    return this.threadsService.create(payload);
   }
 }

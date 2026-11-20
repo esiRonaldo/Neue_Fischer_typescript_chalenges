@@ -5,3 +5,5 @@ export type Thread = {
   body: string;
   createdAt: Date;
 };
+
+export type ThreadPayload = Pick<Thread, 'title' | 'author' | 'body'>;
