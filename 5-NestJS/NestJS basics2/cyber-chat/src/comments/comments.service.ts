@@ -11,11 +11,21 @@ export class CommentsService {
         return comment
     }
 
-    create(threadId: string, payload: CommentPayload):Comment {
+    create(threadId: string, payload: CommentPayload): Comment {
         return this.commentsRepository.create(threadId, payload)
     }
 
     findByThread(threadId: string): Comment[] {
         return this.commentsRepository.findByThread(threadId)
+    }
+
+    deleteByThread(threadId: string): void {
+        this.commentsRepository.deleteByThread(threadId)
+    }
+//here return type is not mandatory , should we add it , is there anything to make it strict
+    markDeleted(id:string):Comment {
+        const comment = this.findById(id)
+        const deletedComment: Comment = { ...comment, body: 'deleted' }
+        return this.commentsRepository.save(deletedComment)
     }
 }

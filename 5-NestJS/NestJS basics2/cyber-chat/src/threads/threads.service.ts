@@ -59,6 +59,14 @@ export class ThreadsService {
     return this.commentsService.create(threadId, payload)
   }
 
+  remove(id: string): void {
+    const removed = this.threadRepository.delete(id);
+    if (!removed) {
+      throw new NotFoundException(`Thread with ID ${id} NOT found.`);
+    }
+    this.commentsService.deleteByThread(id);
+  }
+
   getAuthorStats(): AuthorStat[] {
     const counts = new Map<string, number>();
 

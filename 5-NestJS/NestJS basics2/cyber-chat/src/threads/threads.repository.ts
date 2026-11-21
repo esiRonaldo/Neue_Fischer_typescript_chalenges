@@ -59,4 +59,8 @@ export class ThreadsRepository {
     this.threads.set(thread.id, thread);
     return thread;
   }
+
+  delete(id: string): boolean {
+    return this.threads.delete(id)
+  }
 }

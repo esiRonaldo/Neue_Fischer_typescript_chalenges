@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Delete, Get, Param } from '@nestjs/common';
 import { CommentsService } from './comments.service.js';
 import type { Comment } from './comment.js';
 
@@ -11,5 +11,9 @@ export class CommentsController {
         return this.commentsService.findById(id)
     }
 
+    @Delete(':id')
+    markDeleted(@Param('id') id: string) {
+        return this.commentsService.markDeleted(id)
+    }
 }
 

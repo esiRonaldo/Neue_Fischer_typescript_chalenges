@@ -25,6 +25,17 @@ export class CommentsRepository {
         return comment
     }
 
+    deleteByThread(threadId: string): void {
+        for (const comment of this.comments.values()) {
+            if (comment.threadId === threadId) {
+                this.comments.delete(comment.id)
+            }
+        }
+    }
 
+    save(comment: Comment): Comment {
+        this.comments.set(comment.id, comment)
+        return comment
+    }
 
 }
