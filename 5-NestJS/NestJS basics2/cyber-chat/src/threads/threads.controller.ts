@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ThreadsService } from './threads.service.js';
 import type { ThreadPayload } from './thread.js';
+import type { CommentPayload } from '../comments/comment.js';
 
 @Controller('threads')
 export class ThreadsController {
@@ -25,4 +26,10 @@ export class ThreadsController {
   create(@Body() payload: ThreadPayload) {
     return this.threadsService.create(payload);
   }
+
+  @Post(':id/comments')
+  addComment(@Param('id') id: string, @Body() payload: CommentPayload) {
+    return this.threadsService.addComment(id, payload)
+  }
+
 }

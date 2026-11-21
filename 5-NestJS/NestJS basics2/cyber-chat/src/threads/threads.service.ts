@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Thread, ThreadPayload } from './thread.js';
 import { ThreadsRepository } from './threads.repository.js';
+import { CommentsService } from '../comments/comments.service.js';
+import type { Comment, CommentPayload } from '../comments/comment.js';
+
 
 type AuthorStat = {
   author: string;
@@ -23,7 +26,10 @@ function sortNewestFirst(threads: readonly Thread[]): Thread[] {
 
 @Injectable()
 export class ThreadsService {
-  constructor(private readonly threadRepository: ThreadsRepository) {}
+  constructor(
+    private readonly threadRepository: ThreadsRepository,
+    private readonly commentsService: CommentsService
+  ) { }
 
   findAll(author?: string): Thread[] {
     const allThreads = this.threadRepository.findAll();
@@ -35,17 +41,22 @@ export class ThreadsService {
     return sortNewestFirst(threads);
   }
 
-  findById(id: string): Thread {
+  findById(id: string): Thread & { comments: Comment[] } {
     const thread = this.threadRepository.findById(id);
     if (!thread) {
       throw new NotFoundException(`Thread with ID ${id} NOT found.`);
     }
-    return thread;
+    return { ...thread, comments: this.commentsService.findByThread(id) };
   }
 
   create(payload: ThreadPayload): Thread {
     const thread: Thread = this.threadRepository.create(payload);
     return thread;
+  }
+
+  addComment(threadId: string, payload: CommentPayload): Comment {
+    this.findById(threadId)
+    return this.commentsService.create(threadId, payload)
   }
 
   getAuthorStats(): AuthorStat[] {

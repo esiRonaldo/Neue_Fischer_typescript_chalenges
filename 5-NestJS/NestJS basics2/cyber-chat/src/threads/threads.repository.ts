@@ -45,7 +45,7 @@ export class ThreadsRepository {
   private readonly threads = new Map<string, Thread>(
     sampleThreads.map((thread) => [thread.id, thread]),
   );
-  //TODO: new Map only as a type check?is this best practice?
+
   findAll(): Thread[] {
     return [...this.threads.values()];
   }
