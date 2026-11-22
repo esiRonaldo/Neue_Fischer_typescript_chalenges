@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import type { Thread, ThreadPayload } from './thread.js';
+import type { Thread, ThreadPayload, ThreadChanges } from './thread.js';
 
 const sampleThreads: Thread[] = [
   {
@@ -58,6 +58,17 @@ export class ThreadsRepository {
     const thread = { id: randomUUID(), ...payload, createdAt: new Date() };
     this.threads.set(thread.id, thread);
     return thread;
+  }
+
+  update(id: string, changes: ThreadChanges): Thread | undefined {
+    const oldThread = this.threads.get(id)
+    if (!oldThread) return undefined
+    const updatedThread: Thread = {
+      ...oldThread,
+      ...changes,
+    }
+    this.threads.set(id, updatedThread)
+    return updatedThread
   }
 
   delete(id: string): boolean {

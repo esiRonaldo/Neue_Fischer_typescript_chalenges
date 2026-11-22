@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Thread, ThreadPayload } from './thread.js';
+import type { Thread, ThreadPayload, ThreadChanges } from './thread.js';
 import { ThreadsRepository } from './threads.repository.js';
 import { CommentsService } from '../comments/comments.service.js';
 import type { Comment, CommentPayload } from '../comments/comment.js';
@@ -52,6 +52,18 @@ export class ThreadsService {
   create(payload: ThreadPayload): Thread {
     const thread: Thread = this.threadRepository.create(payload);
     return thread;
+  }
+
+  update(id: string, payload: ThreadChanges): Thread {
+    const changes: ThreadChanges = {}
+    if (payload.title !== undefined) changes.title = payload.title
+    if (payload.body !== undefined) changes.body = payload.body
+
+    const updatedThread = this.threadRepository.update(id, changes)
+    if (!updatedThread) {
+      throw new NotFoundException(`Thread with ID ${id} NOT found.`)
+    }
+    return updatedThread
   }
 
   addComment(threadId: string, payload: CommentPayload): Comment {

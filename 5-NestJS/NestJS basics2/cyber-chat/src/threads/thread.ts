@@ -7,3 +7,5 @@ export type Thread = {
 };
 
 export type ThreadPayload = Pick<Thread, 'title' | 'author' | 'body'>;
+
+export type ThreadChanges = Partial<Pick<Thread, 'title' | 'body'>>
