@@ -31,14 +31,16 @@ export class ThreadsService {
     private readonly commentsService: CommentsService
   ) { }
 
-  findAll(author?: string): Thread[] {
+  findAll(author?: string): (Thread & { commentCount: number })[] {
     const allThreads = this.threadRepository.findAll();
     const threads =
       author === undefined
         ? allThreads
         : allThreads.filter((thread) => thread.author === author);
 
-    return sortNewestFirst(threads);
+    return sortNewestFirst(threads).map(thread => ({
+      ...thread, commentCount: this.commentsService.countByThread(thread.id)
+    }));
   }
 
   findById(id: string): Thread & { comments: Comment[] } {
