@@ -1,35 +1,37 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CommentsRepository } from './comments.repository.js';
-import type { Comment, CommentPayload } from './comment.js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Comment, type CommentPayload } from './comment.entity.js';
 @Injectable()
 export class CommentsService {
-    constructor(private readonly commentsRepository: CommentsRepository) { }
+    constructor(
+        @InjectRepository(Comment)
+        private readonly commentsRepository: Repository<Comment>,
+    ) { }
 
-    findById(id: string): Comment {
-        const comment = this.commentsRepository.findById(id)
+    async findById(id: string): Promise<Comment> {
+        const comment = await this.commentsRepository.findOneBy({ id })
         if (!comment) throw new NotFoundException(`Comment with ID ${id} NOT Found.`)
         return comment
     }
 
-    create(threadId: string, payload: CommentPayload): Comment {
-        return this.commentsRepository.create(threadId, payload)
+    async create(threadId: string, payload: CommentPayload): Promise<Comment> {
+        const comment = this.commentsRepository.create({
+            threadId,
+            author: payload.author,
+            body: payload.body,
+        })
+        return this.commentsRepository.save(comment)
     }
 
-    findByThread(threadId: string): Comment[] {
-        return this.commentsRepository.findByThread(threadId)
+    //TODO:here return type is not mandatory , should we add it , is there anything to make it strict
+    async markDeleted(id: string): Promise<Comment> {
+        const comment = await this.findById(id)
+        comment.body = 'deleted'
+        return this.commentsRepository.save(comment)
     }
 
-    deleteByThread(threadId: string): void {
-        this.commentsRepository.deleteByThread(threadId)
-    }
-    //here return type is not mandatory , should we add it , is there anything to make it strict
-    markDeleted(id: string): Comment {
-        const comment = this.findById(id)
-        const deletedComment: Comment = { ...comment, body: 'deleted' }
-        return this.commentsRepository.save(deletedComment)
-    }
-
-    countByThread(threadId: string): number {
-        return this.commentsRepository.findByThread(threadId).length
+    async countByThread(threadId: string): Promise<number> {
+        return this.commentsRepository.countBy({ threadId })
     }
 }

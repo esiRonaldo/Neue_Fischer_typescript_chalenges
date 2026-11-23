@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ThreadsService } from './threads.service.js';
 import type { Thread, ThreadChanges, ThreadPayload } from './thread.entity.js';
-import type { CommentPayload } from '../comments/comment.js';
+import type { CommentPayload } from '../comments/comment.entity.js';
 
 @Controller('threads')
 export class ThreadsController {

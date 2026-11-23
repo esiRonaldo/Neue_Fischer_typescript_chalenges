@@ -1,6 +1,6 @@
 import { Thread, type ThreadPayload, type ThreadChanges } from './thread.entity.js';
 import { CommentsService } from '../comments/comments.service.js';
-import type { Comment, CommentPayload } from '../comments/comment.js';
+import type { Comment, CommentPayload } from '../comments/comment.entity.js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Injectable, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
@@ -32,7 +32,7 @@ const sampleThreads: ThreadPayload[] = [
 ];
 
 @Injectable()
-export class ThreadsService {
+export class ThreadsService implements OnApplicationBootstrap {
   constructor(
     @InjectRepository(Thread)
     private readonly threadRepository: Repository<Thread>,
@@ -50,17 +50,24 @@ export class ThreadsService {
       order: { createdAt: 'DESC' },
     });
 
-    return threads.map(thread => ({
-      ...thread, commentCount: this.commentsService.countByThread(thread.id)
-    }));
+    return Promise.all(
+      threads.map(async (thread) => ({
+        ...thread,
+        commentCount: await this.commentsService.countByThread(thread.id),
+      })),
+    );
   }
 
-  async findById(id: string): Promise<Thread & { comments: Comment[] }> {
-    const thread = await this.threadRepository.findOneBy({ id });
+  async findById(id: string): Promise<Thread> {
+    const thread = await this.threadRepository.findOne({
+      where: { id },
+      relations: { comments: true },
+      order: { comments: { createdAt: 'ASC' } }
+    });
     if (!thread) {
       throw new NotFoundException(`Thread with ID ${id} NOT found.`);
     }
-    return { ...thread, comments: this.commentsService.findByThread(id) };
+    return thread
   }
 
   async create(payload: ThreadPayload): Promise<Thread> {
@@ -94,7 +101,6 @@ export class ThreadsService {
     if (!result.affected) {
       throw new NotFoundException(`Thread with ID ${id} NOT found.`);
     }
-    this.commentsService.deleteByThread(id);
   }
 
   async getAuthorStats(): Promise<AuthorStat[]> {
