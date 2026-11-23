@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
 import { Thread, type ThreadPayload, type ThreadChanges } from './thread.entity.js';
 import { CommentsService } from '../comments/comments.service.js';
 import type { Comment, CommentPayload } from '../comments/comment.js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Injectable, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
 
 type AuthorStat = {
   author: string;
@@ -18,6 +18,19 @@ function sortByMostThreads(stats: readonly AuthorStat[]): AuthorStat[] {
   return stats.toSorted(byMostThreadsThenName);
 }
 
+const sampleThreads: ThreadPayload[] = [
+  {
+    title: 'Tabs or spaces, final answer?',
+    author: 'pixelpirate',
+    body: 'My team argues about this in every code review. What does your formatter do?',
+  },
+  {
+    title: 'Is SQLite enough for a side project?',
+    author: 'neonbyte',
+    body: 'I expect maybe a hundred users. Do I really need a database server?',
+  },
+];
+
 @Injectable()
 export class ThreadsService {
   constructor(
@@ -25,6 +38,11 @@ export class ThreadsService {
     private readonly threadRepository: Repository<Thread>,
     private readonly commentsService: CommentsService
   ) { }
+
+  async onApplicationBootstrap(): Promise<void> {
+    if ((await this.threadRepository.count()) > 0) return;
+    await this.threadRepository.save(this.threadRepository.create(sampleThreads));
+  }
 
   async findAll(author?: string): Promise<(Thread & { commentCount: number })[]> {
     const threads = await this.threadRepository.find({
