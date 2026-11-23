@@ -17,3 +17,5 @@ export class CommentsController {
     }
 }
 
+//TODO: how do we decide for url address
+//TODO: how do we decide for data models

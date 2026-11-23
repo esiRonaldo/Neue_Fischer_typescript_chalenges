@@ -461,3 +461,163 @@ Technical requirements
 ThreadsService gets the numbers through CommentsService
 Done when
 After two comments on one thread, GET /threads shows "commentCount": 2 for that thread and 0 for the others.
+
+# NestJS TypeORM - Challenges
+Translate this file ↗
+The challenges are written as tickets: a short context, then a box with acceptance criteria, which describe what the result must do, and technical requirements, which name what you have to use. If you get stuck, open the step-by-step help below a ticket.
+
+Keep Threads After a Restart
+Every restart of Cyber Chat erases all threads, because they live in a Map in memory. The threads move into an SQLite database. Comments stay in memory for now and follow in the next ticket.
+
+The database starts empty, so the sample threads are gone. Create threads with POST /threads, or fill the database as shown in the optional section below the ticket.
+
+Challenge
+0/6
+Keep Threads After a Restart
+Acceptance criteria
+
+
+A thread created with POST /threads is still returned by GET /threads and GET /threads/:id after you restart the server
+
+GET /threads/authors, GET /threads/:id with its comments, and DELETE /threads/:id work as before, including status 404 for unknown IDs
+
+If you solved bonus tickets before, ?author=, the sorting, PATCH /threads/:id, and commentCount work as before
+Technical requirements
+
+
+TypeORM with the better-sqlite3 driver, the database file data/cyber-chat.sqlite, synchronize: true, and autoLoadEntities: true
+
+Thread is an entity in src/threads/thread.entity.ts with a UUID primary key and a createdAt that the database sets
+
+ThreadsService receives Repository<Thread> through @InjectRepository. ThreadsRepository is deleted.
+Done when
+After a POST /threads, stop and restart the server: GET /threads/<new id> still returns the new thread.
+
+Step by step
+Install the packages: npm install @nestjs/typeorm typeorm better-sqlite3.
+In AppModule, add TypeOrmModule.forRoot() with type: "better-sqlite3", database: "data/cyber-chat.sqlite", autoLoadEntities: true, and synchronize: true. Add data/ to .gitignore.
+Create src/threads/thread.entity.ts with a class Thread: @Entity("threads"), @PrimaryGeneratedColumn("uuid") for id, @Column() for title, author, and body, and @CreateDateColumn() for createdAt. Move ThreadPayload into this file, delete thread.ts, and change the imports from ./thread.js to ./thread.entity.js.
+In ThreadsModule, add TypeOrmModule.forFeature([Thread]) to imports, remove ThreadsRepository from providers, and delete its file.
+In ThreadsService, inject the repository with @InjectRepository(Thread). Rewrite each method with the repository and make it async: find() for the list, findOneBy({ id }) for a single thread, save(create(payload)) to create one, and delete(id) to delete one. delete() reports in affected whether a row was deleted. Comments still come from CommentsService. If you filter by author, only put author into where when the query parameter is set: TypeORM throws for undefined values in where.
+Start the server, create a thread, restart the server, and request the thread again.
+Hint
+Every repository method returns a Promise. Where a service method uses the result of another one, it needs await. In addComment(), for example, the check that the thread exists only stops a request for a missing thread if you await it.
+
+Optional: Start with Sample Threads
+An empty database is the normal start. If you want sample threads to try things out, ThreadsService can insert them when the application starts and the table is still empty. NestJS calls onApplicationBootstrap() once all modules are ready:
+
+// src/threads/threads.service.ts
+import { Injectable, OnApplicationBootstrap } from "@nestjs/common";
+// ...other imports as before
+
+const sampleThreads: ThreadPayload[] = [
+  {
+    title: "Tabs or spaces, final answer?",
+    author: "pixelpirate",
+    body: "My team argues about this in every code review. What does your formatter do?",
+  },
+  {
+    title: "Is SQLite enough for a side project?",
+    author: "neonbyte",
+    body: "I expect maybe a hundred users. Do I really need a database server?",
+  },
+];
+
+@Injectable()
+export class ThreadsService implements OnApplicationBootstrap {
+  // ...constructor and methods as before
+
+  async onApplicationBootstrap(): Promise<void> {
+    if ((await this.threads.count()) > 0) return;
+    await this.threads.save(this.threads.create(sampleThreads));
+  }
+}
+
+The database sets createdAt, so all sample threads get the time of the first start.
+
+Store Comments with Their Thread
+Threads survive a restart now, their comments don’t. Comments move into the database as well, and the database knows which thread each comment belongs to. That also lets the database delete the comments of a deleted thread.
+
+Challenge
+0/6
+Store Comments with Their Thread
+Acceptance criteria
+
+
+After a restart, GET /threads/:id still shows the comments of the thread, and GET /comments/:id still returns a single comment with its threadId
+
+DELETE /threads/:id deletes the thread and its comments. Afterwards, GET /comments/:id answers with status 404 for each of them.
+
+POST /threads/:id/comments and DELETE /comments/:id work as before, including status 404 for unknown IDs
+Technical requirements
+
+
+Comment is an entity with a many-to-one relation to Thread, stored in the column threadId. Thread has the other side of the relation in comments.
+
+The database deletes the comments of a thread (onDelete: "CASCADE"). No service deletes them by hand.
+
+GET /threads/:id loads the comments through the relation. CommentsRepository is deleted.
+Done when
+Post two comments to a thread and restart the server: GET /threads/<id> still shows both. After DELETE /threads/<id>, GET /comments/<comment id> answers with 404.
+
+Step by step
+Create src/comments/comment.entity.ts with a class Comment: a UUID id, author, body, and createdAt as in Thread, plus @Column() threadId: string. Move CommentPayload into this file and delete comment.ts.
+Add the relation to Comment: a property thread: Relation<Thread> with @ManyToOne(() => Thread, (thread) => thread.comments, { onDelete: "CASCADE" }) and @JoinColumn({ name: "threadId" }).
+Add the other side to Thread: a property comments: Relation<Comment[]> with @OneToMany(() => Comment, (comment) => comment.thread).
+In CommentsModule, add TypeOrmModule.forFeature([Comment]) to imports, remove CommentsRepository from providers, and delete its file.
+In CommentsService, inject Repository<Comment>. create(threadId, payload) saves a comment with threadId. markDeleted(id) loads the comment, sets body to "deleted", and saves it. findByThread() and deleteByThread() are no longer needed. If you show commentCount, count with this.comments.countBy({ threadId }).
+In ThreadsService, load a single thread with findOne({ where: { id }, relations: { comments: true }, order: { comments: { createdAt: "ASC" } } }), and remove the call that deleted the comments in remove().
+Hint
+thread.entity.ts and comment.entity.ts import each other. If the server stops at startup with “ReferenceError: Cannot access ‘Thread’ before initialization”, a relation property is typed without the wrapper. Write Relation<Thread> and Relation<Comment[]>, and import type Relation from "typeorm". Even if the server starts without the wrapper, add it: whether the error appears depends on the order of your imports.
+
+Configure the Database File
+The path of the database file is written into the code. The tests you will write later need a database of their own, and on a server the file lives somewhere else. The path moves into an environment variable.
+
+Challenge
+0/5
+Configure the Database File
+Acceptance criteria
+
+
+With DATABASE_PATH=data/cyber-chat.sqlite in .env, the app uses the same database as before
+
+With a different path in .env, the app starts with a new database in that file
+
+Without DATABASE_PATH, the app does not start, and the error names the missing variable
+Technical requirements
+
+
+@nestjs/config reads .env, and TypeORM gets the path through forRootAsync() and ConfigService
+
+.env is in .gitignore. A committed .env.example lists the variable.
+Done when
+Change DATABASE_PATH in .env to data/demo.sqlite and restart: the new file appears, and the threads you created before are not in GET /threads.
+
+Step by step
+Install the package: npm install @nestjs/config.
+Create .env with the line DATABASE_PATH=data/cyber-chat.sqlite, and .env.example with the same line. Add .env to .gitignore.
+In AppModule, add ConfigModule.forRoot() to imports, and replace TypeOrmModule.forRoot() with TypeOrmModule.forRootAsync(). It gets imports: [ConfigModule], inject: [ConfigService], and a useFactory that receives the ConfigService and returns the options from before, with database: config.getOrThrow<string>("DATABASE_PATH").
+Test the three cases: the same path, another path, and no variable.
+Bonus: Track Schema Changes with Migrations
+synchronize changes the tables on every start. That is convenient now, but the hosted Cyber Chat should only change its schema through steps that someone has read. Migrations record each change as a file.
+
+Challenge
+0/4
+Track Schema Changes with Migrations
+Acceptance criteria
+
+
+With an empty database file, npm run migration:run creates the tables threads and comments, and the app starts and works with synchronize: false
+
+npm run migration:revert removes the tables again
+Technical requirements
+
+
+synchronize is false
+
+src/data-source.ts reads the same DATABASE_PATH as the app, and the scripts migration:generate, migration:run, and migration:revert run the CLI on the compiled files in dist/
+Done when
+Delete the database file, run npm run migration:run, start the app, and create a thread.
+
+Hint
+Generate the first migration from an empty database: npm run migration:generate -- src/migrations/CreateThreadsAndComments. If the database already has the tables, TypeORM reports “No changes in database schema were found” and generates nothing.
