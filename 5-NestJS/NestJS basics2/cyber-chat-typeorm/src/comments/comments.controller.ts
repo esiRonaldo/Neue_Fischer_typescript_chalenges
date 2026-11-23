@@ -6,6 +6,11 @@ import type { Comment } from './comment.entity.js';
 export class CommentsController {
     constructor(private readonly commentsService: CommentsService) { }
 
+    @Get()
+    findAll() {
+        return this.commentsService.findAll()
+    }
+
     @Get(':id')
     async findById(@Param('id') id: string): Promise<Comment> {
         return this.commentsService.findById(id)
