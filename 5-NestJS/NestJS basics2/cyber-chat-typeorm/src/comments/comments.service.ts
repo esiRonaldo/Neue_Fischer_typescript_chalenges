@@ -8,9 +8,9 @@ export class CommentsService {
         @InjectRepository(Comment)
         private readonly commentsRepository: Repository<Comment>,
     ) { }
-async findAll(){
-    return this.commentsRepository.find()
-}
+    async findAll(): Promise<Comment[]> {
+        return this.commentsRepository.find({ order: { createdAt: 'ASC' } })
+    }
     async findById(id: string): Promise<Comment> {
         const comment = await this.commentsRepository.findOneBy({ id })
         if (!comment) throw new NotFoundException(`Comment with ID ${id} NOT Found.`)
