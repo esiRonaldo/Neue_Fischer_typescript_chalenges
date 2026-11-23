@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ThreadsService } from './threads.service.js';
-import type { Thread, ThreadChanges, ThreadPayload } from './thread.js';
+import type { Thread, ThreadChanges, ThreadPayload } from './thread.entity.js';
 import type { CommentPayload } from '../comments/comment.js';
 
 @Controller('threads')
@@ -31,8 +31,9 @@ export class ThreadsController {
   addComment(@Param('id') id: string, @Body() payload: CommentPayload) {
     return this.threadsService.addComment(id, payload)
   }
+
   @Patch(':id')
-  update(@Param('id') id: string, @Body() payload: ThreadChanges): Thread {
+  update(@Param('id') id: string, @Body() payload: ThreadChanges): Promise<Thread> {
     return this.threadsService.update(id, payload)
   }
 

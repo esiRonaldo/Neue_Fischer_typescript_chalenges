@@ -16,6 +16,3 @@ export class CommentsController {
         return this.commentsService.markDeleted(id)
     }
 }
-
-//TODO: how do we decide for url address
-//TODO: how do we decide for data models

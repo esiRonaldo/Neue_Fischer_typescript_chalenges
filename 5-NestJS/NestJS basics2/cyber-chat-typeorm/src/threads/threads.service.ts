@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Thread, ThreadPayload, ThreadChanges } from './thread.js';
-import { ThreadsRepository } from './threads.repository.js';
+import { Thread, type ThreadPayload, type ThreadChanges } from './thread.entity.js';
 import { CommentsService } from '../comments/comments.service.js';
 import type { Comment, CommentPayload } from '../comments/comment.js';
-
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 type AuthorStat = {
   author: string;
@@ -18,73 +18,71 @@ function sortByMostThreads(stats: readonly AuthorStat[]): AuthorStat[] {
   return stats.toSorted(byMostThreadsThenName);
 }
 
-function sortNewestFirst(threads: readonly Thread[]): Thread[] {
-  return threads.toSorted(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-  );
-}
-
 @Injectable()
 export class ThreadsService {
   constructor(
-    private readonly threadRepository: ThreadsRepository,
+    @InjectRepository(Thread)
+    private readonly threadRepository: Repository<Thread>,
     private readonly commentsService: CommentsService
   ) { }
 
-  findAll(author?: string): (Thread & { commentCount: number })[] {
-    const allThreads = this.threadRepository.findAll();
-    const threads =
-      author === undefined
-        ? allThreads
-        : allThreads.filter((thread) => thread.author === author);
+  async findAll(author?: string): Promise<(Thread & { commentCount: number })[]> {
+    const threads = await this.threadRepository.find({
+      where: author === undefined ? {} : { author },
+      order: { createdAt: 'DESC' },
+    });
 
-    return sortNewestFirst(threads).map(thread => ({
+    return threads.map(thread => ({
       ...thread, commentCount: this.commentsService.countByThread(thread.id)
     }));
   }
 
-  findById(id: string): Thread & { comments: Comment[] } {
-    const thread = this.threadRepository.findById(id);
+  async findById(id: string): Promise<Thread & { comments: Comment[] }> {
+    const thread = await this.threadRepository.findOneBy({ id });
     if (!thread) {
       throw new NotFoundException(`Thread with ID ${id} NOT found.`);
     }
     return { ...thread, comments: this.commentsService.findByThread(id) };
   }
 
-  create(payload: ThreadPayload): Thread {
-    const thread: Thread = this.threadRepository.create(payload);
-    return thread;
+  async create(payload: ThreadPayload): Promise<Thread> {
+    const thread = this.threadRepository.create({
+      title: payload.title,
+      author: payload.author,
+      body: payload.body,
+    });
+    return this.threadRepository.save(thread);
   }
 
-  update(id: string, payload: ThreadChanges): Thread {
+  async update(id: string, payload: ThreadChanges): Promise<Thread> {
     const changes: ThreadChanges = {}
     if (payload.title !== undefined) changes.title = payload.title
     if (payload.body !== undefined) changes.body = payload.body
 
-    const updatedThread = this.threadRepository.update(id, changes)
-    if (!updatedThread) {
+    const thread = await this.threadRepository.findOneBy({ id });
+    if (!thread) {
       throw new NotFoundException(`Thread with ID ${id} NOT found.`)
     }
-    return updatedThread
+    return this.threadRepository.save({ ...thread, ...changes })
   }
 
-  addComment(threadId: string, payload: CommentPayload): Comment {
-    this.findById(threadId)
+  async addComment(threadId: string, payload: CommentPayload): Promise<Comment> {
+    await this.findById(threadId)
     return this.commentsService.create(threadId, payload)
   }
 
-  remove(id: string): void {
-    const removed = this.threadRepository.delete(id);
-    if (!removed) {
+  async remove(id: string): Promise<void> {
+    const result = await this.threadRepository.delete(id);
+    if (!result.affected) {
       throw new NotFoundException(`Thread with ID ${id} NOT found.`);
     }
     this.commentsService.deleteByThread(id);
   }
 
-  getAuthorStats(): AuthorStat[] {
+  async getAuthorStats(): Promise<AuthorStat[]> {
     const counts = new Map<string, number>();
 
-    for (const thread of this.threadRepository.findAll()) {
+    for (const thread of await this.threadRepository.find()) {
       const current = counts.get(thread.author) ?? 0;
       counts.set(thread.author, current + 1);
     }
