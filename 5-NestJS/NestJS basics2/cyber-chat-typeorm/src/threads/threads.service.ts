@@ -1,4 +1,4 @@
-import { Thread, type ThreadChanges } from './thread.entity.js';
+import { Thread } from './thread.entity.js';
 import { CommentsService } from '../comments/comments.service.js';
 import type { Comment } from '../comments/comment.entity.js';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { Injectable, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
 import { CreateThreadDto } from './dto/create-thread.dto.js';
 import { CreateCommentDto } from '../comments/dto/create-comment.dto.js';
+import { UpdateThreadDto } from './dto/update-thread.dto.js';
 
 type AuthorStat = {
   author: string;
@@ -81,16 +82,13 @@ export class ThreadsService implements OnApplicationBootstrap {
     return this.threadRepository.save(thread);
   }
 
-  async update(id: string, payload: ThreadChanges): Promise<Thread> {
-    const changes: ThreadChanges = {}
-    if (payload.title !== undefined) changes.title = payload.title
-    if (payload.body !== undefined) changes.body = payload.body
-
+  async update(id: string, dto: UpdateThreadDto): Promise<Thread> {
     const thread = await this.threadRepository.findOneBy({ id });
     if (!thread) {
       throw new NotFoundException(`Thread with ID ${id} NOT found.`)
     }
-    return this.threadRepository.save({ ...thread, ...changes })
+    this.threadRepository.merge(thread, dto)
+    return this.threadRepository.save(thread)
   }
 
   async addComment(threadId: string, payload: CreateCommentDto): Promise<Comment> {

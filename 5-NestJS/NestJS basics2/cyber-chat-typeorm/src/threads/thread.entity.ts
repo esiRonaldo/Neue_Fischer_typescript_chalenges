@@ -21,5 +21,3 @@ export class Thread {
     @OneToMany(()=>Comment, comment=>comment.thread)
     comments:Relation<Comment[]>
 }
-
-export type ThreadChanges = Partial<Pick<Thread, 'title' | 'body'>>
