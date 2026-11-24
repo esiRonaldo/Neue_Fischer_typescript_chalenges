@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { ThreadsService } from './threads.service.js';
 import { CreateThreadDto } from './dto/create-thread.dto.js';
@@ -23,7 +23,7 @@ export class ThreadsController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: string): Promise<ThreadResponseDto> {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<ThreadResponseDto> {
     const thread = await this.threadsService.findById(id);
     return plainToInstance(ThreadResponseDto, thread, { excludeExtraneousValues: true });
   }
@@ -35,19 +35,20 @@ export class ThreadsController {
   }
 
   @Post(':id/comments')
-  async addComment(@Param('id') id: string, @Body() payload: CreateCommentDto): Promise<CommentResponseDto> {
+  async addComment(@Param('id', ParseUUIDPipe) id: string, @Body() payload: CreateCommentDto): Promise<CommentResponseDto> {
     const comment = await this.threadsService.addComment(id, payload)
     return plainToInstance(CommentResponseDto, comment, { excludeExtraneousValues: true });
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateThreadDto): Promise<ThreadResponseDto> {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateThreadDto): Promise<ThreadResponseDto> {
     const thread = await this.threadsService.update(id, dto)
     return plainToInstance(ThreadResponseDto, thread, { excludeExtraneousValues: true });
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.threadsService.remove(id)
   }
 

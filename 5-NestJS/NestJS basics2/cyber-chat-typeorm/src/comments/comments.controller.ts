@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param } from '@nestjs/common';
+import { Controller, Delete, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { CommentsService } from './comments.service.js';
 import { plainToInstance } from 'class-transformer';
 import { CommentResponseDto } from './dto/comment-response.dto.js';
@@ -14,13 +14,13 @@ export class CommentsController {
     }
 
     @Get(':id')
-    async findById(@Param('id') id: string): Promise<CommentResponseDto> {
+    async findById(@Param('id', ParseUUIDPipe) id: string): Promise<CommentResponseDto> {
         const comment = await this.commentsService.findById(id)
         return plainToInstance(CommentResponseDto, comment, { excludeExtraneousValues: true })
     }
 
     @Delete(':id')
-    async markDeleted(@Param('id') id: string): Promise<CommentResponseDto> {
+    async markDeleted(@Param('id', ParseUUIDPipe) id: string): Promise<CommentResponseDto> {
         const comment = await this.commentsService.markDeleted(id)
         return plainToInstance(CommentResponseDto, comment, { excludeExtraneousValues: true })
     }
