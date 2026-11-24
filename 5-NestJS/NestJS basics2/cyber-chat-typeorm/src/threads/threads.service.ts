@@ -47,10 +47,20 @@ export class ThreadsService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    if ((await this.threadRepository.count()) > 0) return;
-    await this.threadRepository.save(
-      this.threadRepository.create(sampleThreads),
-    );
+    // LEARN: without the tables (migrations not run), SQLite only says
+    // "no such table: threads". The app still crashes, but with a hint for
+    // humans. `cause` keeps the original error, so nothing gets lost.
+    try {
+      if ((await this.threadRepository.count()) > 0) return;
+      await this.threadRepository.save(
+        this.threadRepository.create(sampleThreads),
+      );
+    } catch (error) {
+      throw new Error(
+        'Could not seed the sample threads. Did you run "npm run migration:run"?',
+        { cause: error },
+      );
+    }
   }
 
   async findAll(
