@@ -1,7 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ThreadsService } from './threads.service.js';
-import type { Thread, ThreadChanges, ThreadPayload } from './thread.entity.js';
-import type { CommentPayload } from '../comments/comment.entity.js';
+import type { Thread, ThreadChanges } from './thread.entity.js';
+import { CreateThreadDto } from './dto/create-thread.dto.js';
+import { CreateCommentDto } from '../comments/dto/create-comment.dto.js';
 
 @Controller('threads')
 export class ThreadsController {
@@ -23,12 +24,12 @@ export class ThreadsController {
   }
 
   @Post()
-  create(@Body() payload: ThreadPayload) {
+  create(@Body() payload: CreateThreadDto) {
     return this.threadsService.create(payload);
   }
 
   @Post(':id/comments')
-  addComment(@Param('id') id: string, @Body() payload: CommentPayload) {
+  addComment(@Param('id') id: string, @Body() payload: CreateCommentDto) {
     return this.threadsService.addComment(id, payload)
   }
 

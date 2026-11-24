@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Comment, type CommentPayload } from './comment.entity.js';
+import { Comment } from './comment.entity.js';
+import { CreateCommentDto } from './dto/create-comment.dto.js';
 @Injectable()
 export class CommentsService {
     constructor(
@@ -17,7 +18,7 @@ export class CommentsService {
         return comment
     }
 
-    async create(threadId: string, payload: CommentPayload): Promise<Comment> {
+    async create(threadId: string, payload: CreateCommentDto): Promise<Comment> {
         const comment = this.commentsRepository.create({
             threadId,
             author: payload.author,

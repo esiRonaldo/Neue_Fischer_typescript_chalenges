@@ -621,3 +621,178 @@ Delete the database file, run npm run migration:run, start the app, and create a
 
 Hint
 Generate the first migration from an empty database: npm run migration:generate -- src/migrations/CreateThreadsAndComments. If the database already has the tables, TypeORM reports “No changes in database schema were found” and generates nothing.
+
+
+
+# NestJS RESTful Design - Challenges
+Translate this file ↗
+The challenges are written as tickets: a short context, then a box with acceptance criteria, which describe what the result must do, and technical requirements, which name what you have to use. If you get stuck, open the step-by-step help below a ticket.
+
+Test your API with Bruno and keep the requests in a collection inside your Cyber Chat repository. After every change, the runner of the collection sends all of them again.
+
+Reject Invalid Threads and Comments
+Cyber Chat stores whatever a client sends. A thread without a title lands in the database, and a client that sends the id of an existing thread overwrites that thread, author included. Every request body gets rules, and requests that break them never reach the database.
+
+Challenge
+0/7
+Reject Invalid Threads and Comments
+Acceptance criteria
+
+
+POST /threads answers with status 400 when title, author, or body is missing or empty, and message in the response names the field
+
+A title longer than 120 characters, an author longer than 40, or a body longer than 5000 answers with 400
+
+A field the API does not know, such as id or createdAt, answers with 400
+
+POST /threads/:id/comments follows the same rules for author (up to 40 characters) and body (up to 2000 characters)
+
+Valid requests work as before and answer with 201
+Technical requirements
+
+
+CreateThreadDto and CreateCommentDto are classes with class-validator decorators. They replace the types ThreadPayload and CommentPayload.
+
+One ValidationPipe for the whole application, registered in AppModule with whitelist, forbidNonWhitelisted, and transform
+Done when
+POST /threads with { "title": "", "author": "ada", "body": "Hi" } answers with 400 and the message title should not be empty.
+
+Step by step
+Install the packages: npm install class-validator class-transformer @nestjs/mapped-types.
+Create src/threads/dto/create-thread.dto.ts with a class CreateThreadDto. Give title, author, and body the decorators @IsString(), @IsNotEmpty(), and @MaxLength() with the limits from the ticket.
+Create src/comments/dto/create-comment.dto.ts with a class CreateCommentDto for author and body in the same way.
+In the controllers and services, replace ThreadPayload with CreateThreadDto and CommentPayload with CreateCommentDto. Then delete the two types.
+In AppModule, add a provider with provide: APP_PIPE (from @nestjs/core) and useValue: new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }).
+Add a request to your Bruno collection for each criterion, for example POST /threads with the JSON body { "title": "", "author": "ada", "body": "Hi" }.
+Hint
+If valid requests fail with messages like property title should not exist, the controller imports the DTO with import type. NestJS needs the class at runtime to validate against it, so use a normal import.
+
+Edit a Thread
+Typos happen. Authors want to fix the title or the text of a thread without deleting it, and a change follows the same rules as a new thread. The author of a thread never changes. If your Cyber Chat can edit threads already, rebuild the route with these rules.
+
+Challenge
+0/6
+Edit a Thread
+Acceptance criteria
+
+
+PATCH /threads/:id with title, body, or both changes only those fields and answers with 200 and the updated thread
+
+A title or body that breaks the rules for new threads answers with 400
+
+author, id, or createdAt in the request body answers with 400
+
+An empty body {} answers with 200 and the unchanged thread
+
+An unknown ID answers with 404
+Technical requirements
+
+
+UpdateThreadDto is derived from CreateThreadDto with the helpers from @nestjs/mapped-types, so every rule exists only once
+Done when
+After PATCH /threads/<id> with { "title": "Fixed" }, GET /threads/<id> shows the new title and the old body.
+
+Step by step
+Create src/threads/dto/update-thread.dto.ts with export class UpdateThreadDto extends PartialType(PickType(CreateThreadDto, ["title", "body"])) {}. PickType keeps title and body with their rules, and PartialType makes both optional. Both come from @nestjs/mapped-types.
+Add update(id, dto) to ThreadsService: load the thread with findOneBy({ id }), throw a NotFoundException if it is missing, copy the changes with this.threads.merge(thread, dto), and return this.threads.save(thread).
+Add a handler with @Patch(":id") to ThreadsController. It receives the ID with @Param("id") and the changes with @Body() dto: UpdateThreadDto.
+Test the five criteria.
+Hint
+this.threads.update(id, dto) is shorter, but for an empty body TypeORM throws UpdateValuesMissingError, and the client receives 500.
+
+Answer with Public Fields Only
+Moderators are going to keep an internal note on threads, for example why they watch a discussion. The note must never reach the API, but right now every column of a thread goes straight into the JSON. The responses get a fixed shape that new columns cannot change.
+
+The new column of the Thread entity:
+
+@Column({ type: "text", nullable: true })
+moderationNote: string | null;
+
+Challenge
+0/6
+Answer with Public Fields Only
+Acceptance criteria
+
+
+No response contains moderationNote, although every thread has the column
+
+A thread in a response has the fields id, title, author, body, and createdAt, and in GET /threads/:id also comments. If your list shows commentCount, it stays.
+
+A comment in a response, alone or inside a thread, has the fields id, threadId, author, body, and createdAt
+
+This holds for every route that returns threads or comments, including POST, PATCH, and DELETE /comments/:id
+Technical requirements
+
+
+ThreadResponseDto and CommentResponseDto declare the public fields with @Expose()
+
+The controllers map with plainToInstance and excludeExtraneousValues: true. The services keep returning entities.
+Done when
+Before the change, GET /threads/<id> shows "moderationNote": null. Afterwards the field is gone, and the thread and its comments show exactly the fields above.
+
+Step by step
+Add moderationNote to Thread. With synchronize, TypeORM adds the column on the next start. Check that GET /threads/<id> now shows "moderationNote": null.
+Create src/comments/dto/comment-response.dto.ts with a class CommentResponseDto. Each of its five fields gets @Expose() from class-transformer.
+Create src/threads/dto/thread-response.dto.ts with a class ThreadResponseDto: the five fields of a thread with @Expose(), and comments?: CommentResponseDto[] with @Expose() and @Type(() => CommentResponseDto). If you show commentCount, add it with @Expose() as well.
+In every handler that returns threads, pass the result of the service through plainToInstance(ThreadResponseDto, result, { excludeExtraneousValues: true }). Handlers that return comments use CommentResponseDto. For an array, the same call returns an array.
+Annotate the return type of each of these handlers, for example Promise<ThreadResponseDto>.
+GET /threads/authors returns statistics, not threads, and stays as it is. Check every other route.
+Hint
+If the comments inside a thread arrive as {}, @Type(() => CommentResponseDto) is missing on comments: without it, class-transformer does not know which class the nested objects become.
+
+Status Codes That Tell the Truth
+Developers who build clients for Cyber Chat read the status codes, not the bodies. Deleting a thread answers with 200 and an empty body, and a mistyped ID in a URL answers with 404, as if the thread had been deleted. Both mislead their code.
+
+Challenge
+0/6
+Status Codes That Tell the Truth
+Acceptance criteria
+
+
+DELETE /threads/:id answers with 204 No Content
+
+DELETE /comments/:id keeps answering with 200 and the changed comment
+
+Every route with :id answers with 400 when the ID is not a UUID, for example /threads/abc, and with 404 for a UUID that does not exist
+
+GET /threads/authors works as before
+Technical requirements
+
+
+ParseUUIDPipe checks every :id parameter
+
+The 204 comes from @HttpCode()
+Done when
+DELETE /threads/<id> answers with 204 and an empty body, and GET /threads/abc answers with 400.
+
+Step by step
+Add ParseUUIDPipe to every @Param("id") in ThreadsController and CommentsController: @Param("id", ParseUUIDPipe) id: string.
+Put @HttpCode(HttpStatus.NO_CONTENT) on the delete handler of ThreadsController. The handler returns nothing.
+Leave DELETE /comments/:id at 200: it answers with the changed comment, so it has a body.
+Send the requests in Bruno. It shows the status code next to the response, and a 204 comes without a body.
+Hint
+If GET /threads/authors suddenly answers with 400 and Validation failed (uuid is expected), the handler with @Get(":id") is declared above @Get("authors").
+
+Bonus: Threads Since a Date
+Regular visitors only want to read what is new since their last visit.
+
+Challenge
+0/4
+Threads Since a Date
+Acceptance criteria
+
+
+GET /threads?since=2026-11-15 returns only the threads created on or after November 15, 2026
+
+A value that is not a date, such as ?since=yesterday, answers with 400
+
+Without since, the list contains all threads as before. If your list supports ?author=, both parameters work together.
+Technical requirements
+
+
+A pipe of your own, ParseDatePipe, implements PipeTransform and turns the query value into a Date
+Done when
+GET /threads?since=2099-01-01 returns an empty array, and GET /threads?since=yesterday answers with 400.
+
+Hint
+transform(value) receives undefined when the URL has no since; return it unchanged. In the service, MoreThanOrEqual(since) from typeorm builds the condition. Like every where value, add it only when it is set. The NestJS docs on custom pipes show the structure of a pipe.

@@ -1,9 +1,11 @@
-import { Thread, type ThreadPayload, type ThreadChanges } from './thread.entity.js';
+import { Thread, type ThreadChanges } from './thread.entity.js';
 import { CommentsService } from '../comments/comments.service.js';
-import type { Comment, CommentPayload } from '../comments/comment.entity.js';
+import type { Comment } from '../comments/comment.entity.js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Injectable, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
+import { CreateThreadDto } from './dto/create-thread.dto.js';
+import { CreateCommentDto } from '../comments/dto/create-comment.dto.js';
 
 type AuthorStat = {
   author: string;
@@ -18,7 +20,7 @@ function sortByMostThreads(stats: readonly AuthorStat[]): AuthorStat[] {
   return stats.toSorted(byMostThreadsThenName);
 }
 
-const sampleThreads: ThreadPayload[] = [
+const sampleThreads: CreateThreadDto[] = [
   {
     title: 'Tabs or spaces, final answer?',
     author: 'pixelpirate',
@@ -70,7 +72,7 @@ export class ThreadsService implements OnApplicationBootstrap {
     return thread
   }
 
-  async create(payload: ThreadPayload): Promise<Thread> {
+  async create(payload: CreateThreadDto): Promise<Thread> {
     const thread = this.threadRepository.create({
       title: payload.title,
       author: payload.author,
@@ -91,7 +93,7 @@ export class ThreadsService implements OnApplicationBootstrap {
     return this.threadRepository.save({ ...thread, ...changes })
   }
 
-  async addComment(threadId: string, payload: CommentPayload): Promise<Comment> {
+  async addComment(threadId: string, payload: CreateCommentDto): Promise<Comment> {
     await this.findById(threadId)
     return this.commentsService.create(threadId, payload)
   }

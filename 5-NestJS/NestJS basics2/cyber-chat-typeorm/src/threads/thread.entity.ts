@@ -22,6 +22,4 @@ export class Thread {
     comments:Relation<Comment[]>
 }
 
-
-export type ThreadPayload = Pick<Thread, 'title' | 'author' | 'body'>;
 export type ThreadChanges = Partial<Pick<Thread, 'title' | 'body'>>

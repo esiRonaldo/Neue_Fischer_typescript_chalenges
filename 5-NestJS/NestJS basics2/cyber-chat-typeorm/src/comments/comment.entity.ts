@@ -23,5 +23,3 @@ export class Comment {
     thread: Relation<Thread>;
 }
 
-
-export type CommentPayload = Pick<Comment, 'author' | 'body'>;
