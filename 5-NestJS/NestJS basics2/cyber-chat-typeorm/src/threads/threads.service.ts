@@ -3,7 +3,11 @@ import { CommentsService } from '../comments/comments.service.js';
 import type { Comment } from '../comments/comment.entity.js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Injectable, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { CreateThreadDto } from './dto/create-thread.dto.js';
 import { CreateCommentDto } from '../comments/dto/create-comment.dto.js';
 import { UpdateThreadDto } from './dto/update-thread.dto.js';
@@ -39,15 +43,19 @@ export class ThreadsService implements OnApplicationBootstrap {
   constructor(
     @InjectRepository(Thread)
     private readonly threadRepository: Repository<Thread>,
-    private readonly commentsService: CommentsService
-  ) { }
+    private readonly commentsService: CommentsService,
+  ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     if ((await this.threadRepository.count()) > 0) return;
-    await this.threadRepository.save(this.threadRepository.create(sampleThreads));
+    await this.threadRepository.save(
+      this.threadRepository.create(sampleThreads),
+    );
   }
 
-  async findAll(author?: string): Promise<(Thread & { commentCount: number })[]> {
+  async findAll(
+    author?: string,
+  ): Promise<(Thread & { commentCount: number })[]> {
     const threads = await this.threadRepository.find({
       where: author === undefined ? {} : { author },
       order: { createdAt: 'DESC' },
@@ -65,12 +73,12 @@ export class ThreadsService implements OnApplicationBootstrap {
     const thread = await this.threadRepository.findOne({
       where: { id },
       relations: { comments: true },
-      order: { comments: { createdAt: 'ASC' } }
+      order: { comments: { createdAt: 'ASC' } },
     });
     if (!thread) {
       throw new NotFoundException(`Thread with ID ${id} NOT found.`);
     }
-    return thread
+    return thread;
   }
 
   async create(payload: CreateThreadDto): Promise<Thread> {
@@ -85,15 +93,18 @@ export class ThreadsService implements OnApplicationBootstrap {
   async update(id: string, dto: UpdateThreadDto): Promise<Thread> {
     const thread = await this.threadRepository.findOneBy({ id });
     if (!thread) {
-      throw new NotFoundException(`Thread with ID ${id} NOT found.`)
+      throw new NotFoundException(`Thread with ID ${id} NOT found.`);
     }
-    this.threadRepository.merge(thread, dto)
-    return this.threadRepository.save(thread)
+    this.threadRepository.merge(thread, dto);
+    return this.threadRepository.save(thread);
   }
 
-  async addComment(threadId: string, payload: CreateCommentDto): Promise<Comment> {
-    await this.findById(threadId)
-    return this.commentsService.create(threadId, payload)
+  async addComment(
+    threadId: string,
+    payload: CreateCommentDto,
+  ): Promise<Comment> {
+    await this.findById(threadId);
+    return this.commentsService.create(threadId, payload);
   }
 
   async remove(id: string): Promise<void> {

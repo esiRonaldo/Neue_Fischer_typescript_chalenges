@@ -1,25 +1,32 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, type Relation } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  type Relation,
+} from 'typeorm';
 import { Thread } from '../threads/thread.entity.js';
 
 @Entity('comments')
 export class Comment {
-    @PrimaryGeneratedColumn('uuid')
-    id: string
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @Column()
-    threadId: string;
+  @Column()
+  threadId: string;
 
-    @Column()
-    author: string;
+  @Column()
+  author: string;
 
-    @Column()
-    body: string;
+  @Column()
+  body: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @ManyToOne(() => Thread, thread => thread.comments, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'threadId' })
-    thread: Relation<Thread>;
+  @ManyToOne(() => Thread, (thread) => thread.comments, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'threadId' })
+  thread: Relation<Thread>;
 }
-

@@ -8,6 +8,6 @@ import { Thread } from './thread.entity.js';
 @Module({
   providers: [ThreadsService],
   controllers: [ThreadsController],
-  imports: [TypeOrmModule.forFeature([Thread]), CommentsModule]
+  imports: [TypeOrmModule.forFeature([Thread]), CommentsModule],
 })
-export class ThreadsModule { }
+export class ThreadsModule {}
