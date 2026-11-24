@@ -1,23 +1,27 @@
 import { Controller, Delete, Get, Param } from '@nestjs/common';
 import { CommentsService } from './comments.service.js';
-import type { Comment } from './comment.entity.js';
+import { plainToInstance } from 'class-transformer';
+import { CommentResponseDto } from './dto/comment-response.dto.js';
 
 @Controller('comments')
 export class CommentsController {
     constructor(private readonly commentsService: CommentsService) { }
 
     @Get()
-    findAll() {
-        return this.commentsService.findAll()
+    async findAll(): Promise<CommentResponseDto[]> {
+        const comments = await this.commentsService.findAll()
+        return plainToInstance(CommentResponseDto, comments, { excludeExtraneousValues: true })
     }
 
     @Get(':id')
-    async findById(@Param('id') id: string): Promise<Comment> {
-        return this.commentsService.findById(id)
+    async findById(@Param('id') id: string): Promise<CommentResponseDto> {
+        const comment = await this.commentsService.findById(id)
+        return plainToInstance(CommentResponseDto, comment, { excludeExtraneousValues: true })
     }
 
     @Delete(':id')
-    markDeleted(@Param('id') id: string) {
-        return this.commentsService.markDeleted(id)
+    async markDeleted(@Param('id') id: string): Promise<CommentResponseDto> {
+        const comment = await this.commentsService.markDeleted(id)
+        return plainToInstance(CommentResponseDto, comment, { excludeExtraneousValues: true })
     }
 }

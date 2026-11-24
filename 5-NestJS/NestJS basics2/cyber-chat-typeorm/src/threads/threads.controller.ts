@@ -1,17 +1,20 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { ThreadsService } from './threads.service.js';
-import type { Thread } from './thread.entity.js';
 import { CreateThreadDto } from './dto/create-thread.dto.js';
 import { CreateCommentDto } from '../comments/dto/create-comment.dto.js';
 import { UpdateThreadDto } from './dto/update-thread.dto.js';
+import { ThreadResponseDto } from './dto/thread-response.dto.js';
+import { CommentResponseDto } from '../comments/dto/comment-response.dto.js';
 
 @Controller('threads')
 export class ThreadsController {
   constructor(private readonly threadsService: ThreadsService) { }
 
   @Get()
-  findAll(@Query('author') author?: string) {
-    return this.threadsService.findAll(author);
+  async findAll(@Query('author') author?: string): Promise<ThreadResponseDto[]> {
+    const threads = await this.threadsService.findAll(author);
+    return plainToInstance(ThreadResponseDto, threads, { excludeExtraneousValues: true });
   }
 
   @Get('authors')
@@ -20,23 +23,27 @@ export class ThreadsController {
   }
 
   @Get(':id')
-  findById(@Param('id') id: string) {
-    return this.threadsService.findById(id);
+  async findById(@Param('id') id: string): Promise<ThreadResponseDto> {
+    const thread = await this.threadsService.findById(id);
+    return plainToInstance(ThreadResponseDto, thread, { excludeExtraneousValues: true });
   }
 
   @Post()
-  create(@Body() payload: CreateThreadDto) {
-    return this.threadsService.create(payload);
+  async create(@Body() payload: CreateThreadDto): Promise<ThreadResponseDto> {
+    const thread = await this.threadsService.create(payload);
+    return plainToInstance(ThreadResponseDto, thread, { excludeExtraneousValues: true });
   }
 
   @Post(':id/comments')
-  addComment(@Param('id') id: string, @Body() payload: CreateCommentDto) {
-    return this.threadsService.addComment(id, payload)
+  async addComment(@Param('id') id: string, @Body() payload: CreateCommentDto): Promise<CommentResponseDto> {
+    const comment = await this.threadsService.addComment(id, payload)
+    return plainToInstance(CommentResponseDto, comment, { excludeExtraneousValues: true });
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateThreadDto): Promise<Thread> {
-    return this.threadsService.update(id, dto)
+  async update(@Param('id') id: string, @Body() dto: UpdateThreadDto): Promise<ThreadResponseDto> {
+    const thread = await this.threadsService.update(id, dto)
+    return plainToInstance(ThreadResponseDto, thread, { excludeExtraneousValues: true });
   }
 
   @Delete(':id')

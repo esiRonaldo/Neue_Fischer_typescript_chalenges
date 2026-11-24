@@ -15,9 +15,12 @@ export class Thread {
     @Column()
     body: string
 
+    @Column({ type: 'text', nullable: true })
+    moderationNote: string | null
+
     @CreateDateColumn()
     createdAt: Date
-    
-    @OneToMany(()=>Comment, comment=>comment.thread)
-    comments:Relation<Comment[]>
+
+    @OneToMany(() => Comment, comment => comment.thread)
+    comments: Relation<Comment[]>
 }
