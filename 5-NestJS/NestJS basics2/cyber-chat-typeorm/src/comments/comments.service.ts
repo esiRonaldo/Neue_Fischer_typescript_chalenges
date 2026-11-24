@@ -25,14 +25,23 @@ export class CommentsService {
         })
         return this.commentsRepository.save(comment)
     }
-
-    //TODO:here return type is not mandatory , should we add it , is there anything to make it strict
+    // when do we need ty/catch ,  and when do we need to check error handling in delete if comment not exist?
     async markDeleted(id: string): Promise<Comment> {
         const comment = await this.findById(id)
         comment.body = 'deleted'
         return this.commentsRepository.save(comment)
     }
-
+    // async markDeleted(id: string): Promise<Comment> {
+    //  if (id === undefined || id.trim() === '') {
+    // throw new BadRequestException(`Comment ID cannot be empty`);
+    //  }
+    // const comment = await this.comments.findOneBy({ id });
+    // if (!comment) {
+    // throw new NotFoundException(`Comment with id ${id} not found`);
+    //  }
+    // comment.body = 'deleted';
+    // return this.comments.save(comment);
+    //  }
     async countByThread(threadId: string): Promise<number> {
         return this.commentsRepository.countBy({ threadId })
     }

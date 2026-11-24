@@ -90,7 +90,7 @@ export class ThreadsService implements OnApplicationBootstrap {
     }
     return this.threadRepository.save({ ...thread, ...changes })
   }
-//TODO: any constraint for new commit except id?
+
   async addComment(threadId: string, payload: CommentPayload): Promise<Comment> {
     await this.findById(threadId)
     return this.commentsService.create(threadId, payload)

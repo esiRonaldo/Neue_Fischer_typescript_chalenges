@@ -26,7 +26,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         type: 'better-sqlite3',
         database: config.getOrThrow<string>('DATABASE_PATH'),
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: false,
       }),
     }),
     ThreadsModule,
