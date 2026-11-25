@@ -23,16 +23,18 @@ import {
   CommentResponseDto,
   toCommentResponse,
 } from '../comments/dto/comment-response.dto.js';
+import { ParseDatePipe } from '../common/pipes/parse-date.pipe.js';
 
 @Controller('threads')
 export class ThreadsController {
-  constructor(private readonly threadsService: ThreadsService) {}
+  constructor(private readonly threadsService: ThreadsService) { }
 
   @Get()
   async findAll(
     @Query('author') author?: string,
+    @Query('since', ParseDatePipe) since?: Date,
   ): Promise<ThreadResponseDto[]> {
-    const threads = await this.threadsService.findAll(author);
+    const threads = await this.threadsService.findAll(author, since);
     return threads.map(toThreadResponse);
   }
 

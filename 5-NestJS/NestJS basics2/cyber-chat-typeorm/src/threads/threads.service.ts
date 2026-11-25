@@ -2,7 +2,7 @@ import { Thread } from './thread.entity.js';
 import { CommentsService } from '../comments/comments.service.js';
 import type { Comment } from '../comments/comment.entity.js';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual, FindOptionsWhere } from 'typeorm';
 import {
   Injectable,
   NotFoundException,
@@ -44,7 +44,7 @@ export class ThreadsService implements OnApplicationBootstrap {
     @InjectRepository(Thread)
     private readonly threadRepository: Repository<Thread>,
     private readonly commentsService: CommentsService,
-  ) {}
+  ) { }
 
   async onApplicationBootstrap(): Promise<void> {
     // LEARN: without the tables (migrations not run), SQLite only says
@@ -64,10 +64,15 @@ export class ThreadsService implements OnApplicationBootstrap {
   }
 
   async findAll(
-    author?: string,
+    author?: string, 
+    since?: Date
   ): Promise<(Thread & { commentCount: number })[]> {
+    const where: FindOptionsWhere<Thread> = {};
+    if (author !== undefined) where.author = author;
+    if (since !== undefined) where.createdAt = MoreThanOrEqual(since);
+
     const threads = await this.threadRepository.find({
-      where: author === undefined ? {} : { author },
+      where,
       order: { createdAt: 'DESC' },
     });
 
